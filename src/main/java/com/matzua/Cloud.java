@@ -1,6 +1,7 @@
 package com.matzua;
 
 import processing.core.PApplet;
+import processing.core.PGraphics;
 
 import java.util.List;
 import java.util.function.*;
@@ -80,9 +81,9 @@ public class Cloud {
         this.lines = lines;
     }
 
-    public void draw(PApplet g, Camera camera) {g.
+    public void draw(PGraphics g, Camera camera) {
         g.push();
-        int offset = (int) ((camera.x * camera.y - Math.pow(camera.z, 2)) + g.millis());
+        int offset = (int) ((camera.x * camera.y - Math.pow(camera.z, 2)) + System.currentTimeMillis());
         if (lines) {
             points.stream()
                     .filter(point -> z + point.z - camera.z > 0)
