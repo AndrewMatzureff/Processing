@@ -17,6 +17,8 @@ public class InputManager {
         }
     }
 
+    Map<Integer, String> keyBinds = new HashMap<>();
+
     // NOTE: secondary queue for uninterrupted key handling while primary is blocking?
     private final BlockingQueue<Character> chars = new LinkedBlockingQueue<>();
     Set<Integer> keys = new HashSet<>();
@@ -38,9 +40,17 @@ public class InputManager {
             .accept(keyState.key);
     }
 
-    public Stream<String> translate(Map<Integer, String> actionRegistry) {
+    public Stream<String> translate() {
         return keys.stream()
-            .map(actionRegistry::get)
+            .map(keyBinds::get)
             .filter(Objects::nonNull);
+    }
+
+    public void bind(Integer key, String actionId) {
+        keyBinds.put(key, actionId);
+    }
+
+    public void unbind(Integer key) {
+        keyBinds.remove(key);
     }
 }
