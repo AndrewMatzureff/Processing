@@ -14,6 +14,10 @@ repositories {
 }
 
 dependencies {
+    // Add Dagger dependencies
+    implementation("com.google.dagger:dagger:2.52")
+    annotationProcessor("com.google.dagger:dagger-compiler:2.52")
+
     implementation("org.projectlombok:lombok:1.18.26")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -35,10 +39,6 @@ dependencies {
 
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
-
 //for including in the copy task
 val natives = copySpec {
     from("natives")
@@ -50,6 +50,10 @@ tasks {
         into("build/libs/natives")
         with(natives)
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.assemble {
