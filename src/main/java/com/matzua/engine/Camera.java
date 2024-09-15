@@ -1,4 +1,4 @@
-package com.matzua;
+package com.matzua.engine;
 
 import lombok.AllArgsConstructor;
 
