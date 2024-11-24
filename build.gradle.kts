@@ -14,9 +14,6 @@ repositories {
 }
 
 dependencies {
-    // Add Dagger dependencies
-    implementation("com.google.dagger:dagger:2.52")
-    annotationProcessor("com.google.dagger:dagger-compiler:2.52")
 
     implementation("org.projectlombok:lombok:1.18.26")
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
@@ -37,6 +34,9 @@ dependencies {
 
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 
+    // Add Dagger dependencies
+    implementation("com.google.dagger:dagger:2.52")
+    annotationProcessor("com.google.dagger:dagger-compiler:2.52")
 }
 
 //for including in the copy task
