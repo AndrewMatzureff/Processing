@@ -2,6 +2,7 @@ import org.gradle.internal.impldep.bsh.commands.dir
 
 plugins {
     id("java")
+    id("jacoco")
     id("io.freefair.lombok") version "8.6"
     application
 }
@@ -20,7 +21,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 
     // required if you want to use Mockito for unit tests
-    testImplementation("org.mockito:mockito-core:2.24.5")
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
 
     // lombok
     compileOnly("org.projectlombok:lombok:1.18.32")
@@ -54,6 +56,7 @@ tasks {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy("jacocoTestReport") // Generate the report after tests run
 }
 
 tasks.assemble {
@@ -79,4 +82,12 @@ tasks.withType<Jar> {
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
     })
+}
+
+tasks.withType<JacocoReport> {
+    classDirectories.setFrom(
+            sourceSets.main.get().output.asFileTree.matching {
+                exclude("org/example/B.class")
+            }
+    )
 }
