@@ -16,9 +16,9 @@ import static com.matzua.engine.util.Fun.SerializableLambda.MethodReference;
 @RequiredArgsConstructor
 @AllArgsConstructor
 public class ConfigManager<Cfg> {
-    static final String msgDefaultValueUndefined = "Option values in the DEFAULT config cannot be left NULL: '%s'.";
-    static final Function<Object[], IllegalStateException> errDefaultValueUndefined =
-        args -> new IllegalStateException(msgDefaultValueUndefined.formatted(args));
+//    static final String msgDefaultValueUndefined = "Option values in the DEFAULT config cannot be left NULL: '%s'.";
+//    static final Function<Object[], IllegalStateException> errDefaultValueUndefined =
+//        args -> new IllegalStateException(msgDefaultValueUndefined.formatted(args));
 
     static final String msgInvalidImplClass = "TODO: update message!!! '%s'.";
     static final Function<Object[], IllegalArgumentException> errInvalidImplClass =
@@ -52,14 +52,14 @@ public class ConfigManager<Cfg> {
     }
 
     public <T> T get(SerializableFunction<Cfg, T> optionGetter) {
-        return getFrom(current, true, optionGetter)
-            .or(() -> getFrom(defaultConfig, false, optionGetter))
-            .orElseThrow(s(errDefaultValueUndefined, defaultConfig));
+        return getFrom(current, false, optionGetter)
+            .or(() -> getFrom(defaultConfig, true, optionGetter))
+            .orElse(null);
     }
 
     public <T> T getDefault(SerializableFunction<Cfg, T> optionGetter) {
-        return getFrom(defaultConfig, true, optionGetter)
-            .orElseThrow(s(errDefaultValueUndefined, defaultConfig));
+        return getFrom(defaultConfig, false, optionGetter)
+            .orElse(null);
     }
 
     public <T> void set(@NonNull T optionValue, @NonNull SerializableBiConsumer<Cfg, T> optionSetter) {
@@ -112,14 +112,13 @@ public class ConfigManager<Cfg> {
         }
     }
 
-    private <T> Optional<T> getFrom(Cfg config, boolean shouldValidate, SerializableFunction<Cfg, T> optionGetter) {
-        if (shouldValidate) {
-            return Optional.of(optionGetter)
+    private <T> Optional<T> getFrom(Cfg config, boolean bypassGetterValidation, SerializableFunction<Cfg, T> optionGetter) {
+        if (!bypassGetterValidation) {
+            Optional.of(optionGetter)
                 .map(SerializableLambda::toMethodReference)
                 .map(this::toValidConfigKey)
                 .filter(configOptionGettersByConfigKey::containsKey)
-                .map(str -> config)
-                .map(optionGetter);
+                .orElseThrow(() -> new RuntimeException("TODO: Update this Exception!!!"));
         }
 
         return Optional.of(config).map(optionGetter);
@@ -130,7 +129,7 @@ public class ConfigManager<Cfg> {
             .map(MethodReference::implClass)
             .filter(configClass.getName().replace('.', '/')::equals)
             .map(str -> methodReference)
-            .map(MethodReference::implMethodName)
+            .map(MethodReference::toReferenceName)
             .orElseThrow(s(errInvalidImplClass, msgInvalidImplClass));
     }
 }
