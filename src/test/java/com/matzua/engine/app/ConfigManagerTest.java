@@ -12,13 +12,14 @@ import java.util.function.Consumer;
 
 import static com.matzua.engine.util.Fun.SerializableBiConsumer;
 import static com.matzua.engine.util.Fun.SerializableFunction;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 public class ConfigManagerTest {
     @Data
     @AllArgsConstructor
-    private static class Cfg { private String option; }
+    private static final class Cfg { private String option; }
     private AutoCloseable mocks;
     private ConfigManager<Cfg> configManager;
 
@@ -55,7 +56,7 @@ public class ConfigManagerTest {
     }
 
     @Test
-    public void register_optionAccessorsAreMappedToExpectedKeys() {
+    public void register_resultsInGivenOptionAccessorsMappedToExpectedKeys() {
         // given
         final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
         final SerializableBiConsumer<Cfg, String> cfgOptionSetter = Cfg::setOption;
@@ -66,16 +67,54 @@ public class ConfigManagerTest {
 
         // then
         verify(mockSinkOptionSettersByConfigKey, times(1))
-            .put("getOption", sinkOptionSetter);
+            .put("Cfg::getOption", sinkOptionSetter);
         verify(mockSinkOptionSettersByConfigKey, times(1))
-            .put("setOption", sinkOptionSetter);
+            .put("Cfg::setOption", sinkOptionSetter);
         verify(mockConfigOptionSettersByConfigKey, times(1))
-            .put("getOption", cfgOptionSetter);
+            .put("Cfg::getOption", cfgOptionSetter);
         verify(mockConfigOptionSettersByConfigKey, times(1))
-            .put("setOption", cfgOptionSetter);
+            .put("Cfg::setOption", cfgOptionSetter);
         verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put("getOption", cfgOptionGetter);
+            .put("Cfg::getOption", cfgOptionGetter);
         verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put("setOption", cfgOptionGetter);
+            .put("Cfg::setOption", cfgOptionGetter);
+        verifyNoMoreInteractions(
+            mockSinkOptionSettersByConfigKey,
+            mockConfigOptionSettersByConfigKey,
+            mockConfigOptionGettersByConfigKey
+        );
+    }
+
+    @Test
+    public void getDefault_withNonnullRegisteredOption_returnsExpectedDefaultValue() {
+        // given
+        final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
+        final SerializableBiConsumer<Cfg, String> cfgOptionSetter = Cfg::setOption;
+        final Consumer<String> sinkOptionSetter = s -> {};
+
+        final String expectation = "expectation";
+
+        when(mockDefaultConfig.getOption())
+            .thenReturn(expectation);
+        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+            .thenReturn(true);
+
+        configManager.register(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter);
+
+        // when
+        final String result = configManager.getDefault(cfgOptionGetter);
+
+        // then
+        assertEquals(expectation, result);
+
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .put("Cfg::getOption", cfgOptionGetter);
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .put("Cfg::setOption", cfgOptionGetter);
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .containsKey("Cfg::getOption");
+        verify(mockDefaultConfig, times(1))
+            .getOption();
+        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey);
     }
 }

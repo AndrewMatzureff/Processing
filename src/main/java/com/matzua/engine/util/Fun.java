@@ -41,6 +41,11 @@ public interface Fun {
                 );
             }
 
+            public String toReferenceName() {
+                final int i = Math.max(implClass.lastIndexOf('/'), implClass.lastIndexOf('$'));
+                return "%s::%s".formatted(implClass.substring(i + 1), implMethodName);
+            }
+
 //            @Override
 //            public boolean equals(final Object other) {
 //                return Optional.of(other)
