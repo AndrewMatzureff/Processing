@@ -5,14 +5,21 @@ import lombok.Data;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static com.matzua.engine.util.Fun.SerializableBiConsumer;
 import static com.matzua.engine.util.Fun.SerializableFunction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -55,6 +62,8 @@ public class ConfigManagerTest {
         mocks.close();
     }
 
+    // =============================================================================================== // register \\\\
+
     @Test
     public void register_resultsInGivenOptionAccessorsMappedToExpectedKeys() {
         // given
@@ -66,33 +75,47 @@ public class ConfigManagerTest {
         configManager.register(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter);
 
         // then
-        verify(mockSinkOptionSettersByConfigKey, times(1))
-            .put("Cfg::getOption", sinkOptionSetter);
-        verify(mockSinkOptionSettersByConfigKey, times(1))
-            .put("Cfg::setOption", sinkOptionSetter);
-        verify(mockConfigOptionSettersByConfigKey, times(1))
-            .put("Cfg::getOption", cfgOptionSetter);
-        verify(mockConfigOptionSettersByConfigKey, times(1))
-            .put("Cfg::setOption", cfgOptionSetter);
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put("Cfg::getOption", cfgOptionGetter);
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put("Cfg::setOption", cfgOptionGetter);
+        verifyRegistration(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter, "Cfg::getOption", "Cfg::setOption");
         verifyNoMoreInteractions(
             mockSinkOptionSettersByConfigKey,
             mockConfigOptionSettersByConfigKey,
-            mockConfigOptionGettersByConfigKey
+            mockConfigOptionGettersByConfigKey,
+            mockCurrent,
+            mockDefaultConfig
         );
     }
 
-    @Test
-    public void getDefault_withNonnullRegisteredOption_returnsExpectedDefaultValue() {
+    private void verifyRegistration(
+        SerializableFunction<Cfg, String> cfgOptionGetter,
+        SerializableBiConsumer<Cfg, String> cfgOptionSetter,
+        Consumer<String> sinkOptionSetter,
+        String getterKey,
+        String setterKey
+    ) {
+        verify(mockSinkOptionSettersByConfigKey, times(1))
+            .put(getterKey, sinkOptionSetter);
+        verify(mockSinkOptionSettersByConfigKey, times(1))
+            .put(setterKey, sinkOptionSetter);
+        verify(mockConfigOptionSettersByConfigKey, times(1))
+            .put(getterKey, cfgOptionSetter);
+        verify(mockConfigOptionSettersByConfigKey, times(1))
+            .put(setterKey, cfgOptionSetter);
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .put(getterKey, cfgOptionGetter);
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .put(setterKey, cfgOptionGetter);
+    }
+
+    // ============================================================================================= // getDefault \\\\
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = "expectation")
+    public void getDefault_withRegisteredOption_returnsExpectedDefaultValue(final String expectation) {
         // given
         final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
         final SerializableBiConsumer<Cfg, String> cfgOptionSetter = Cfg::setOption;
         final Consumer<String> sinkOptionSetter = s -> {};
-
-        final String expectation = "expectation";
 
         when(mockDefaultConfig.getOption())
             .thenReturn(expectation);
@@ -107,14 +130,93 @@ public class ConfigManagerTest {
         // then
         assertEquals(expectation, result);
 
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put("Cfg::getOption", cfgOptionGetter);
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put("Cfg::setOption", cfgOptionGetter);
+        verifyRegistration(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter, "Cfg::getOption", "Cfg::setOption");
         verify(mockConfigOptionGettersByConfigKey, times(1))
             .containsKey("Cfg::getOption");
         verify(mockDefaultConfig, times(1))
             .getOption();
-        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey);
+        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
     }
+
+    @Test
+    public void getDefault_withUnregisteredOption_throwsRuntimeException() {
+        // given
+        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+            .thenReturn(false);
+
+        // when & then
+        assertThrows(RuntimeException.class, () -> configManager.getDefault(Cfg::getOption));
+
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .containsKey("Cfg::getOption");
+        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
+    }
+
+    // ==================================================================================================== // get \\\\
+
+    @ParameterizedTest
+    @MethodSource
+    public void get_withRegisteredOption_returnsExpectedValue(
+        final String currentValue,
+        final String defaultValue,
+        final String expectation,
+        final int expectedCurrentTimes,
+        final int expectedDefaultTimes
+    ) {
+        // given
+        final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
+        final SerializableBiConsumer<Cfg, String> cfgOptionSetter = Cfg::setOption;
+        final Consumer<String> sinkOptionSetter = s -> {};
+
+        when(mockCurrent.getOption())
+            .thenReturn(currentValue);
+        when(mockDefaultConfig.getOption())
+            .thenReturn(defaultValue);
+        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+            .thenReturn(true);
+
+        configManager.register(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter);
+
+        // when
+        final String result = configManager.get(cfgOptionGetter);
+
+        // then
+        assertEquals(expectation, result);
+
+        verifyRegistration(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter, "Cfg::getOption", "Cfg::setOption");
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .containsKey("Cfg::getOption");
+        verify(mockCurrent, times(expectedCurrentTimes))
+            .getOption();
+        verify(mockDefaultConfig, times(expectedDefaultTimes))
+            .getOption();
+        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
+    }
+
+    @Test
+    public void get_withUnregisteredOption_throwsRuntimeException() {
+        // given
+        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+            .thenReturn(false);
+
+        // when & then
+        assertThrows(RuntimeException.class, () -> configManager.get(Cfg::getOption));
+
+        verify(mockConfigOptionGettersByConfigKey, times(1))
+            .containsKey("Cfg::getOption");
+        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
+    }
+
+    //// argument providers \\ ===================================================================================== \\
+
+    private static Stream<Arguments> get_withRegisteredOption_returnsExpectedValue() {
+        return Stream.of(
+            Arguments.of(null,              null,           null,           1, 1),
+            Arguments.of(null,              "defaultValue", "defaultValue", 1, 1),
+            Arguments.of("currentValue",    null,           "currentValue", 1, 0),
+            Arguments.of("currentValue",    "defaultValue", "currentValue", 1, 0)
+        );
+    }
+
+    // ==================================================================================================== // ... \\\\
 }
