@@ -3,20 +3,22 @@ package com.matzua.engine.app;
 import com.matzua.engine.app.config.Config;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.core.LayerManager;
+import com.matzua.engine.util.Fun;
 import lombok.RequiredArgsConstructor;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.opengl.PGraphicsOpenGL;
 
 import javax.inject.Inject;
-import java.util.HashMap;
 import java.util.Optional;
+
+import static com.matzua.engine.app.ConfigManager.accessors;
 
 @RequiredArgsConstructor (onConstructor_ = {@Inject})
 public class App extends PApplet {
+    private final ConfigManager<Config, App> configManager;
     private final EventManager eventManager;
     private final LayerManager layerManager;
-    private final Config config;
 
     // Mutable References
     private PGraphics canvas;
@@ -33,19 +35,16 @@ public class App extends PApplet {
      * a few variables, compared to the setup() command that call commands in the Processing API."
      */
     public void settings() {
-        size (config.getWindowSizeWidth(), config.getWindowSizeHeight(), P2D);
-        System.out.printf("window(%d, %d)%n", config.getWindowSizeWidth(), config.getWindowSizeHeight());
-        ConfigManager<Config> configManager = ConfigManager.<Config>builder()
-            .withConfigClass(Config.class)
-            .withCurrent(config)
-            .withWorking(config)
-            .withDefaultConfig(Config.builder().withWindowInfoTitle("App").build())
-            .withSinkOptionSettersByConfigKey(new HashMap<>())
-            .withConfigOptionSettersByConfigKey(new HashMap<>())
-            .withConfigOptionGettersByConfigKey(new HashMap<>())
-//            .withChanged(false)
-            .build();
-        //String WINTIT = configManager.register(Config::setWindowInfoTitle, Config::setWindowInfoTitle, this::windowTitle);
+        configManager.register(Config::getWindowInfoTitle, Config::setWindowInfoTitle, App::windowTitle);
+        configManager.register(Fun.SerializableQuadConsumer.<App, Integer, Integer, String>of(App::size),
+            accessors(Config::getWindowSizeWidth, Config::setWindowSizeWidth),
+            accessors(Config::getWindowSizeHeight, Config::setWindowSizeHeight),
+            accessors(Config::getWindowRenderer, Config::setWindowRenderer)
+        );
+        size (configManager.get(Config::getWindowSizeWidth), configManager.get(Config::getWindowSizeHeight), P2D);
+        System.out.printf("window(%d, %d)%n",
+            configManager.get(Config::getWindowSizeWidth),
+            configManager.get(Config::getWindowSizeHeight));
         
     }
 
@@ -69,7 +68,6 @@ public class App extends PApplet {
 
     public void draw() {
         push();
-
         Optional.ofNullable(canvas)
             .ifPresent(pg -> image(pg, 0, 0, width, height));
 

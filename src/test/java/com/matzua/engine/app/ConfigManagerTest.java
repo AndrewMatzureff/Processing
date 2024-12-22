@@ -1,5 +1,6 @@
 package com.matzua.engine.app;
 
+import com.matzua.engine.util.Fun;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.jupiter.api.AfterEach;
@@ -10,14 +11,18 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.Set;
 import java.util.stream.Stream;
 
-import static com.matzua.engine.util.Fun.SerializableBiConsumer;
-import static com.matzua.engine.util.Fun.SerializableFunction;
+import static com.matzua.engine.app.ConfigManager.accessors;
+import static com.matzua.engine.util.Fun.*;
+import static com.matzua.engine.util.Fun.SerializableLambda.MethodReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -27,8 +32,11 @@ public class ConfigManagerTest {
     @Data
     @AllArgsConstructor
     private static final class Cfg { private String option; }
+    @Data
+    @AllArgsConstructor
+    private static final class Tgt { private String option; }
     private AutoCloseable mocks;
-    private ConfigManager<Cfg> configManager;
+    private ConfigManager<Cfg, Tgt> configManager;
 
     @Mock
     private Cfg mockDefaultConfig;
@@ -37,29 +45,66 @@ public class ConfigManagerTest {
     @Mock
     private Cfg mockWorking;
     @Mock
-    private Map<String, Consumer<?>> mockSinkOptionSettersByConfigKey;
+    private Map<MethodReference, SerializableFunction<Cfg, ?>[]> mockExecutableGettersByTarget;
     @Mock
-    private Map<String, SerializableFunction<Cfg, ?>> mockConfigOptionGettersByConfigKey;
+    private Map<MethodReference, SerializableFunction<Cfg, ?>> mockExecutableGettersBySetter;
     @Mock
-    private Map<String, SerializableBiConsumer<Cfg, ?>> mockConfigOptionSettersByConfigKey;
+    private Set<MethodReference> mockConfigOptionGetters;
+    @Mock
+    private Set<MethodReference> mockConfigOptionSetters;
 
     @BeforeEach
     public void open() {
         mocks = openMocks(this);
-        configManager = ConfigManager.<Cfg>builder()
-            .withConfigClass(Cfg.class)
+        configManager = ConfigManager.builder(Cfg.class, Tgt.class)
             .withDefaultConfig(mockDefaultConfig)
             .withCurrent(mockCurrent)
             .withWorking(mockWorking)
-            .withConfigOptionGettersByConfigKey(mockConfigOptionGettersByConfigKey)
-            .withConfigOptionSettersByConfigKey(mockConfigOptionSettersByConfigKey)
-            .withSinkOptionSettersByConfigKey(mockSinkOptionSettersByConfigKey)
+            .withExecutableGettersByTarget(mockExecutableGettersByTarget)
+            .withExecutableGettersBySetter(mockExecutableGettersBySetter)
+            .withConfigOptionGetters(mockConfigOptionGetters)
+            .withConfigOptionSetters(mockConfigOptionSetters)
             .build();
     }
 
     @AfterEach
     public void close() throws Exception {
+        verifyNoMoreInteractions(
+            mockExecutableGettersByTarget,
+            mockConfigOptionSetters,
+            mockConfigOptionGetters,
+            mockExecutableGettersBySetter,
+            mockCurrent,
+            mockWorking,
+            mockDefaultConfig
+        );
         mocks.close();
+    }
+
+    @SafeVarargs
+    @SuppressWarnings(value = "unchecked")
+    private void verifyRegistration(
+        Fun.SerializableLambda targetOptionsSetter,
+        ConfigManager.Accessors<Cfg>... configOptionAccessors
+    ) {
+        ArgumentCaptor<SerializableFunction<Cfg, String>[]> gettersCaptor
+            = ArgumentCaptor.forClass(SerializableFunction[].class);
+
+        final List<? extends SerializableFunction<Cfg, ?>> getters = Arrays.stream(configOptionAccessors)
+            .map(accessors -> {
+                final MethodReference getterConfigKey = accessors.getter().toMethodReference(Cfg.class);
+                final MethodReference setterConfigKey = accessors.setter().toMethodReference(Cfg.class);
+                verify(mockExecutableGettersBySetter).put(setterConfigKey, accessors.getter());
+                verify(mockConfigOptionGetters).add(getterConfigKey);
+                verify(mockConfigOptionSetters).add(setterConfigKey);
+                return accessors.getter();
+            })
+            .toList();
+
+        verify(mockExecutableGettersByTarget)
+            .put(eq(targetOptionsSetter.toMethodReference(null)), gettersCaptor.capture());
+
+        assertEquals(getters, Arrays.asList(gettersCaptor.getValue()));
     }
 
     // =============================================================================================== // register \\\\
@@ -69,41 +114,16 @@ public class ConfigManagerTest {
         // given
         final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
         final SerializableBiConsumer<Cfg, String> cfgOptionSetter = Cfg::setOption;
-        final Consumer<String> sinkOptionSetter = s -> {};
+        final SerializableBiConsumer<Tgt, String> sinkOptionSetter = (tgt, str) -> {};
 
         // when
         configManager.register(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter);
 
         // then
-        verifyRegistration(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter, "Cfg::getOption", "Cfg::setOption");
-        verifyNoMoreInteractions(
-            mockSinkOptionSettersByConfigKey,
-            mockConfigOptionSettersByConfigKey,
-            mockConfigOptionGettersByConfigKey,
-            mockCurrent,
-            mockDefaultConfig
+        verifyRegistration(
+            sinkOptionSetter,
+            accessors(cfgOptionGetter, cfgOptionSetter)
         );
-    }
-
-    private void verifyRegistration(
-        SerializableFunction<Cfg, String> cfgOptionGetter,
-        SerializableBiConsumer<Cfg, String> cfgOptionSetter,
-        Consumer<String> sinkOptionSetter,
-        String getterKey,
-        String setterKey
-    ) {
-        verify(mockSinkOptionSettersByConfigKey, times(1))
-            .put(getterKey, sinkOptionSetter);
-        verify(mockSinkOptionSettersByConfigKey, times(1))
-            .put(setterKey, sinkOptionSetter);
-        verify(mockConfigOptionSettersByConfigKey, times(1))
-            .put(getterKey, cfgOptionSetter);
-        verify(mockConfigOptionSettersByConfigKey, times(1))
-            .put(setterKey, cfgOptionSetter);
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put(getterKey, cfgOptionGetter);
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .put(setterKey, cfgOptionGetter);
     }
 
     // ============================================================================================= // getDefault \\\\
@@ -115,11 +135,12 @@ public class ConfigManagerTest {
         // given
         final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
         final SerializableBiConsumer<Cfg, String> cfgOptionSetter = Cfg::setOption;
-        final Consumer<String> sinkOptionSetter = s -> {};
+        final SerializableBiConsumer<Tgt, String> sinkOptionSetter = (tgt, str) -> {};
+        final MethodReference getterReference = cfgOptionGetter.toMethodReference(Cfg.class);
 
         when(mockDefaultConfig.getOption())
             .thenReturn(expectation);
-        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+        when(mockConfigOptionGetters.contains(getterReference))
             .thenReturn(true);
 
         configManager.register(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter);
@@ -130,26 +151,27 @@ public class ConfigManagerTest {
         // then
         assertEquals(expectation, result);
 
-        verifyRegistration(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter, "Cfg::getOption", "Cfg::setOption");
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .containsKey("Cfg::getOption");
-        verify(mockDefaultConfig, times(1))
+        verifyRegistration(sinkOptionSetter, accessors(cfgOptionGetter, cfgOptionSetter));
+        verify(mockConfigOptionGetters)
+            .contains(getterReference);
+        verify(mockDefaultConfig)
             .getOption();
-        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
     }
 
     @Test
     public void getDefault_withUnregisteredOption_throwsRuntimeException() {
         // given
-        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+        final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
+        final MethodReference getterReference = cfgOptionGetter.toMethodReference(Cfg.class);
+
+        when(mockConfigOptionGetters.contains(getterReference))
             .thenReturn(false);
 
         // when & then
-        assertThrows(RuntimeException.class, () -> configManager.getDefault(Cfg::getOption));
+        assertThrows(RuntimeException.class, () -> configManager.getDefault(cfgOptionGetter));
 
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .containsKey("Cfg::getOption");
-        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
+        verify(mockConfigOptionGetters)
+            .contains(getterReference);
     }
 
     // ==================================================================================================== // get \\\\
@@ -166,13 +188,14 @@ public class ConfigManagerTest {
         // given
         final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
         final SerializableBiConsumer<Cfg, String> cfgOptionSetter = Cfg::setOption;
-        final Consumer<String> sinkOptionSetter = s -> {};
+        final SerializableBiConsumer<Tgt, String> sinkOptionSetter = (tgt, str) -> {};
+        final MethodReference getterReference = cfgOptionGetter.toMethodReference(Cfg.class);
 
         when(mockCurrent.getOption())
             .thenReturn(currentValue);
         when(mockDefaultConfig.getOption())
             .thenReturn(defaultValue);
-        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+        when(mockConfigOptionGetters.contains(getterReference))
             .thenReturn(true);
 
         configManager.register(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter);
@@ -183,28 +206,29 @@ public class ConfigManagerTest {
         // then
         assertEquals(expectation, result);
 
-        verifyRegistration(cfgOptionGetter, cfgOptionSetter, sinkOptionSetter, "Cfg::getOption", "Cfg::setOption");
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .containsKey("Cfg::getOption");
+        verifyRegistration(sinkOptionSetter, accessors(cfgOptionGetter, cfgOptionSetter));
+        verify(mockConfigOptionGetters)
+            .contains(getterReference);
         verify(mockCurrent, times(expectedCurrentTimes))
             .getOption();
         verify(mockDefaultConfig, times(expectedDefaultTimes))
             .getOption();
-        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
     }
 
     @Test
     public void get_withUnregisteredOption_throwsRuntimeException() {
         // given
-        when(mockConfigOptionGettersByConfigKey.containsKey("Cfg::getOption"))
+        final SerializableFunction<Cfg, String> cfgOptionGetter = Cfg::getOption;
+        final MethodReference getterReference = cfgOptionGetter.toMethodReference(Cfg.class);
+
+        when(mockConfigOptionGetters.contains(getterReference))
             .thenReturn(false);
 
         // when & then
-        assertThrows(RuntimeException.class, () -> configManager.get(Cfg::getOption));
+        assertThrows(RuntimeException.class, () -> configManager.get(cfgOptionGetter));
 
-        verify(mockConfigOptionGettersByConfigKey, times(1))
-            .containsKey("Cfg::getOption");
-        verifyNoMoreInteractions(mockConfigOptionGettersByConfigKey, mockCurrent, mockDefaultConfig);
+        verify(mockConfigOptionGetters)
+            .contains(getterReference);
     }
 
     //// argument providers \\ ===================================================================================== \\

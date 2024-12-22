@@ -94,8 +94,14 @@ public interface Fun {
                 throw new RuntimeException("TODO: update this message!!!", e);
             }
         }
-        default MethodReference toMethodReference() {
+
+        default MethodReference toMethodReference(final Class<?> implClass) {
             final SerializedLambda sl = this.toSerializedLambda();
+
+            if (implClass != null && !implClass.getName().replace('.', '/').equals(sl.getImplClass())) {
+                throw Validation.newPlaceholderError();
+            }
+
             return new MethodReference(
                 sl.getImplClass(),
                 sl.getImplMethodKind(),
@@ -131,12 +137,36 @@ public interface Fun {
     }
 
     @FunctionalInterface
+    interface SerializableQuadConsumer<T, U, V, W> extends SerializableLambda, BiConsumer<Map.Entry<T, U>, Map.Entry<V, W>> {
+        void accept(T t, U u, V v, W w);
+        @Override
+        default void accept(Map.Entry<T, U> tuEntry, Map.Entry<V, W> vwEntry) {
+            accept(tuEntry.getKey(), tuEntry.getValue(), vwEntry.getKey(), vwEntry.getValue());
+        }
+        static <T, U, V, W> SerializableQuadConsumer<T, U, V, W> of(SerializableQuadConsumer<T, U, V, W> reference) {
+            return reference;
+        }
+    }
+
+    @FunctionalInterface
     interface SerializableBiConsumer<T, U> extends SerializableLambda, BiConsumer<T, U> {}
 
     @FunctionalInterface
     interface SerializableFunction<T, R> extends SerializableLambda, Function<T, R> {}
 
     // =============================================================================================== // wrappers \\\\
+
+    // NOTE: instead of the format "<wrapper>(<arg>, <lambda>)" try exploring "<const>(<arg>).<wrapper>(<lambda>)"...
+    /*
+            Fun.___(     ).from(Example::trifunction);  // 3 -> 3
+            Fun.__$(    z).from(Example::trifunction);  // 3 -> 2
+            Fun._$_(  y  ).from(Example::trifunction);  // 3 -> 2
+            Fun._$$(  y,z).from(Example::trifunction);  // 3 -> 1
+            Fun.$__(x    ).from(Example::trifunction);  // 3 -> 2
+            Fun.$_$(x,  z).from(Example::trifunction);  // 3 -> 1
+            Fun.$$_(x,y  ).from(Example::trifunction);  // 3 -> 1
+            Fun.$$$(x,y,z).from(Example::trifunction);  // 3 -> 0
+     */
 
     //// identities \\ ============================================================================================= \\
 
