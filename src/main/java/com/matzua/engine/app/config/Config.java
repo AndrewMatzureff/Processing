@@ -1,12 +1,11 @@
 package com.matzua.engine.app.config;
 
-import com.matzua.engine.app.App;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import processing.core.PApplet;
 
 import javax.inject.Inject;
-import java.util.function.Function;
+
+import static processing.core.PConstants.P2D;
 
 @Data
 @Builder(setterPrefix = "with")
@@ -26,7 +25,6 @@ public class Config {
     int windowSizeHeight = 360;
     @Builder.Default
     int windowSizeWidth = 640;
-    public static String testWIT(Config c) {
-        return c.getWindowInfoTitle();
-    }
+    @Builder.Default
+    String windowRenderer = P2D;
 }
