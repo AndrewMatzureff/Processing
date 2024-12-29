@@ -5,12 +5,8 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public interface Fun {
 
@@ -149,6 +145,18 @@ public interface Fun {
     }
 
     @FunctionalInterface
+    interface SerializableTriConsumer<T, U, V> extends SerializableLambda, BiConsumer<T, Map.Entry<U, V>> {
+        void accept(T t, U u, V v);
+        @Override
+        default void accept(T t, Map.Entry<U, V> uvEntry) {
+            accept(t, uvEntry.getKey(), uvEntry.getValue());
+        }
+        static <T, U, V> SerializableTriConsumer<T, U, V> of(SerializableTriConsumer<T, U, V> reference) {
+            return reference;
+        }
+    }
+
+    @FunctionalInterface
     interface SerializableBiConsumer<T, U> extends SerializableLambda, BiConsumer<T, U> {}
 
     @FunctionalInterface
@@ -240,6 +248,8 @@ public interface Fun {
     static <T, U, R> Function<T, R> fu(U u, BiFunction<T, U, R> bf) {return t -> bf.apply(t, u);}
 
     //// bifunctions \\ ============================================================================================ \\
+
+    static <T, U, R1, R2> BiFunction<T, U, R2> bf(R2 r, BiFunction<T, U, R1> bf) {return bf.andThen(r1 -> r);}
 
     //// suppliers \\ ============================================================================================== \\
 

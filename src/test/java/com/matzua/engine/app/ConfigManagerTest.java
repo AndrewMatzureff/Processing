@@ -36,7 +36,7 @@ public class ConfigManagerTest {
     @AllArgsConstructor
     private static final class Tgt { private String option; }
     private AutoCloseable mocks;
-    private ConfigManager<Cfg, Tgt> configManager;
+    private ConfigManager<Cfg> configManager;
 
     @Mock
     private Cfg mockDefaultConfig;
@@ -56,7 +56,7 @@ public class ConfigManagerTest {
     @BeforeEach
     public void open() {
         mocks = openMocks(this);
-        configManager = ConfigManager.builder(Cfg.class, Tgt.class)
+        configManager = ConfigManager.builder(Cfg.class)
             .withDefaultConfig(mockDefaultConfig)
             .withCurrent(mockCurrent)
             .withWorking(mockWorking)
