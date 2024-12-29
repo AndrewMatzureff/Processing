@@ -15,7 +15,7 @@ import static com.matzua.engine.util.Validation.newPlaceholderError;
 @Builder(setterPrefix = "with")
 @RequiredArgsConstructor
 @AllArgsConstructor
-public class ConfigManager<Cfg, Tgt> {
+public class ConfigManager<Cfg> {
     public record Accessors<Cfg>(SerializableFunction<Cfg, ?> getter, SerializableBiConsumer<Cfg, ?> setter) {
         private static <Cfg> Accessors<Cfg> of(SerializableFunction<Cfg, ?> getter, SerializableBiConsumer<Cfg, ?> setter) {
             return new Accessors<>(getter, setter);
@@ -39,7 +39,7 @@ public class ConfigManager<Cfg, Tgt> {
     private final Set<MethodReference> configOptionSetters;
     private boolean changed;
 
-    public <T> void register(
+    public <T, Tgt> void register(
         SerializableFunction<Cfg, T> configOptionGetter,
         SerializableBiConsumer<Cfg, T> configOptionSetter,
         SerializableBiConsumer<Tgt, T> sinkOptionSetter
@@ -111,11 +111,11 @@ public class ConfigManager<Cfg, Tgt> {
         changed = true;
     }
 
-    public void sync(Tgt optionsSourceInstance) {
+    public <Tgt> void sync(Tgt optionsSourceInstance) {
         executableGettersByTarget.keySet().forEach(setter -> sync(optionsSourceInstance, setter));
     }
 
-    private void sync(
+    private <Tgt> void sync(
         Tgt optionsSourceInstance,
         MethodReference optionsSetter
     ) {
@@ -142,19 +142,19 @@ public class ConfigManager<Cfg, Tgt> {
         }
     }
 
-    public static <Cfg, Tgt> ConfigManagerBuilder<Cfg, Tgt> builder(Class<Cfg> configClass, Class<Tgt> targetClass) {
-        System.out.printf("Building %s<%s, %s>...%n",
-            ConfigManager.class.getSimpleName(), configClass.getSimpleName(), targetClass.getSimpleName());
+    public static <Cfg> ConfigManagerBuilder<Cfg> builder(Class<Cfg> configClass) {
+        System.out.printf("Building %s<%s>...%n",
+            ConfigManager.class.getSimpleName(), configClass.getSimpleName());
 
-        return ConfigManager.<Cfg, Tgt>builder().withConfigClass(configClass);
+        return ConfigManager.<Cfg>builder().withConfigClass(configClass);
     }
 
-    private static <Cfg, Tgt> ConfigManagerBuilder<Cfg, Tgt> builder() {
-        return new ConfigManagerBuilder<Cfg, Tgt>();
+    private static <Cfg> ConfigManagerBuilder<Cfg> builder() {
+        return new ConfigManagerBuilder<Cfg>();
     }
 
-    public static class ConfigManagerBuilder<Cfg, Tgt> {
-        private ConfigManagerBuilder<Cfg, Tgt> withConfigClass(Class<Cfg> configClass) {
+    public static class ConfigManagerBuilder<Cfg> {
+        private ConfigManagerBuilder<Cfg> withConfigClass(Class<Cfg> configClass) {
             this.configClass = configClass;
             return this;
         }
