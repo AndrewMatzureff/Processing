@@ -3,8 +3,11 @@ package com.matzua.engine.app;
 import com.matzua.engine.app.config.Config;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.core.LayerManager;
+import com.matzua.engine.entity.EntityManager;
 import com.matzua.engine.event.Event;
+import com.matzua.engine.renderer.Renderer;
 import com.matzua.engine.util.Fun;
+import com.matzua.engine.util.SequenceMap;
 import lombok.RequiredArgsConstructor;
 import processing.core.PApplet;
 import processing.core.PGraphics;
@@ -14,16 +17,21 @@ import processing.opengl.PGraphicsOpenGL;
 import javax.inject.Inject;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.matzua.engine.app.ConfigManager.accessors;
 
 @RequiredArgsConstructor (onConstructor_ = {@Inject})
 public class App extends PApplet {
     //// Ad-Hoc Testing... \\ -------------------------------------------------------------------------------------- \\
-    private record Point(float x, float y) {}
-    private static Point point = new Point(0, 0);
     final Map<Integer, Double> states = new HashMap<>();
+    private final EntityManager entityManager;
+    private final Renderer renderer;
+    int playerId;
     // -------------------------------------------------------------------------------------- // ...Ad-Hoc Testing \\\\
     private final ConfigManager<Config> configManager;
     private final EventManager eventManager;
@@ -74,11 +82,6 @@ public class App extends PApplet {
             ((PGraphicsOpenGL) g).textureSampling(2);
         }
 
-        configManager.register(Fun.SerializableTriConsumer.of(PGraphics::resize),
-            accessors(Config::getCanvasSizeWidth, Config::setCanvasSizeWidth),
-            accessors(Config::getCanvasSizeHeight, Config::setCanvasSizeHeight)
-        );
-
         canvas = createGraphics(
             configManager.get(Config::getCanvasSizeWidth),
             configManager.get(Config::getCanvasSizeHeight),
@@ -98,12 +101,8 @@ public class App extends PApplet {
     }
 
     public void draw() {
-        if (canvas == null) {
-            return;
-        }
-
         // Process input-dependent state changes...
-        point = Map.of(
+        Map.of(
             'W', new double[] { 0.0,-1.0},
             'A', new double[] {-1.0, 0.0},
             'S', new double[] { 0.0, 1.0},
@@ -116,20 +115,21 @@ public class App extends PApplet {
                 return e.getValue();
             })
             .reduce((e1, e2) -> new double[]{e1[0] + e2[0], e1[1] + e2[1]})
-            .map(d -> new Point(point.x + (float) d[0], point.y + (float) d[1]))
-            .orElse(point);
+            .ifPresent(d -> {
+                final EntityManager.Entity player = entityManager.getEntity(playerId);
+                player.setX(player.getX() + (float) d[0]);
+                player.setY(player.getY() + (float) d[1]);
+            });
         // ...
 
         push();
-        canvas.beginDraw();
-        canvas.push();
-        canvas.fill(0f);
-        canvas.translate(point.x, point.y);
-        canvas.box(25);
-        canvas.pop();
-        canvas.endDraw();
-        image(canvas, 0, 0, width, height);
+        renderer.render(canvas);
+        if (canvas != null) {
+            image(canvas, 0, 0, width, height);
+        }
         pop();
+
+        entityManager.tick();
     }
 
     @Override
