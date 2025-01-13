@@ -23,7 +23,9 @@ import java.util.function.Function;
 public class EventManager {
     Map<Class<? extends Event>, List<Consumer<? extends Event>>> subscribers;
     Map<Class<?>, Function<?, ? extends Event>> adapters;
-    static final Function<Object, Event> toEvent = e -> Optional.of(e).map(Event.class::cast).orElseThrow();
+    static final Function<Object, Event> toEvent = e -> Optional.of(e)
+        .map(Event.class::cast)
+        .orElseThrow(Validation::newPlaceholderError);
     public <T extends Event> void subscribe(Class<T> type, Consumer<T> subscriber) {
         // TODO: add subscribers to the buckets of all parents of type
         subscribers.merge(type, new LinkedList<>(List.of(subscriber)), Collections::addAll);
