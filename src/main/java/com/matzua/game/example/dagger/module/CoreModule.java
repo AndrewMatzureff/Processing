@@ -3,18 +3,19 @@ package com.matzua.game.example.dagger.module;
 import com.matzua.engine.app.ConfigManager;
 import com.matzua.engine.app.config.Config;
 import com.matzua.engine.core.EventManager;
+import com.matzua.engine.entity.Component;
 import com.matzua.engine.entity.EntityManager;
 import com.matzua.engine.renderer.Renderer;
+import com.matzua.engine.renderer.geom.Box;
 import com.matzua.engine.util.Fun;
 import com.matzua.engine.util.SequenceMap;
 import dagger.Module;
 import dagger.Provides;
 import processing.core.PGraphics;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -61,7 +62,11 @@ public interface CoreModule {
                     (float) Math.random() * configManager.get(Config::getCanvasSizeWidth),
                     (float) Math.random() * configManager.get(Config::getCanvasSizeHeight)
                 })
-                .map(xy -> new EntityManager.Entity(xy[0], xy[1], eventManager))
+                .map(xy -> new EntityManager.Entity(
+                    eventManager,
+                    Map.of(new Component.Id<>("main", Box.class),
+                        new Box(eventManager, xy[0], xy[1], (int) (Math.random() * 25) + 1f))
+                ))
                 .collect(Collectors.toList()))
             .withEventManager(eventManager)
             .build();
@@ -74,5 +79,16 @@ public interface CoreModule {
             .withEventManager(eventManager)
             .withOperations(new SequenceMap.Impl<>(HashMap::new, LinkedList::new))
             .build();
+    }
+
+    @Provides
+    @Named(value = "App.playerId")
+    static int provideApp$playerId(EntityManager entityManager, EventManager eventManager) {
+        // TODO: revise as this seems... weird but it's fine for now.
+        return entityManager.addEntity(new EntityManager.Entity(
+            eventManager,
+            Map.of(new Component.Id<>("main", Box.class),
+                new Box(eventManager, 0, 0, (int) (Math.random() * 25) + 1f))
+        ));
     }
 }

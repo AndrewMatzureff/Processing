@@ -3,9 +3,11 @@ package com.matzua.engine.app;
 import com.matzua.engine.app.config.Config;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.core.LayerManager;
+import com.matzua.engine.entity.Component;
 import com.matzua.engine.entity.EntityManager;
 import com.matzua.engine.event.Event;
 import com.matzua.engine.renderer.Renderer;
+import com.matzua.engine.renderer.geom.Box;
 import com.matzua.engine.util.Fun;
 import com.matzua.engine.util.SequenceMap;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import processing.event.KeyEvent;
 import processing.opengl.PGraphicsOpenGL;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -25,13 +28,12 @@ import java.util.stream.IntStream;
 
 import static com.matzua.engine.app.ConfigManager.accessors;
 
-@RequiredArgsConstructor (onConstructor_ = {@Inject})
 public class App extends PApplet {
     //// Ad-Hoc Testing... \\ -------------------------------------------------------------------------------------- \\
     final Map<Integer, Double> states = new HashMap<>();
     private final EntityManager entityManager;
     private final Renderer renderer;
-    int playerId;
+    private final int playerId;
     // -------------------------------------------------------------------------------------- // ...Ad-Hoc Testing \\\\
     private final ConfigManager<Config> configManager;
     private final EventManager eventManager;
@@ -39,6 +41,22 @@ public class App extends PApplet {
 
     // Mutable References
     private PGraphics canvas;
+    @Inject
+    public App(
+        EntityManager entityManager,
+        Renderer renderer,
+        ConfigManager<Config> configManager,
+        EventManager eventManager,
+        LayerManager layerManager,
+        @Named(value = "App.playerId") int playerId
+    ) {
+        this.entityManager = entityManager;
+        this.renderer = renderer;
+        this.configManager = configManager;
+        this.eventManager = eventManager;
+        this.layerManager = layerManager;
+        this.playerId = playerId;
+    }
 
     /**
      * "The settings() function is new with Processing 3.0. It's not needed in most sketches. It's only useful when it's
@@ -117,8 +135,10 @@ public class App extends PApplet {
             .reduce((e1, e2) -> new double[]{e1[0] + e2[0], e1[1] + e2[1]})
             .ifPresent(d -> {
                 final EntityManager.Entity player = entityManager.getEntity(playerId);
-                player.setX(player.getX() + (float) d[0]);
-                player.setY(player.getY() + (float) d[1]);
+                player.message(Component.id("main", Box.class), box -> {
+                    box.setX(box.getX() + (float) d[0]);
+                    box.setY(box.getY() + (float) d[1]);
+                });
             });
         // ...
 
