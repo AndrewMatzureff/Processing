@@ -2,11 +2,12 @@ package com.matzua.game.example.dagger.module;
 
 import com.matzua.engine.app.ConfigManager;
 import com.matzua.engine.app.config.Config;
+import com.matzua.engine.component.scene.Position;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.entity.EntityManager;
-import com.matzua.engine.input.InputController;
+import com.matzua.engine.component.input.InputController;
 import com.matzua.engine.renderer.Renderer;
-import com.matzua.engine.renderer.geom.Box;
+import com.matzua.engine.component.renderer.geom.Box;
 import com.matzua.engine.util.Fun;
 import com.matzua.engine.util.SequenceMap;
 import com.matzua.engine.util.Validation;
@@ -57,16 +58,19 @@ public interface CoreModule {
     @Singleton
     static EntityManager provideEntityManager(EventManager eventManager, ConfigManager<Config> configManager) {
         final EntityManager entityManager = EntityManager.builder()
-            .withComponents(IntStream.range(0, 10)
-                .mapToObj(i -> {
-                    final float x = (float) Math.random() * configManager.get(Config::getCanvasSizeWidth);
-                    final float y = (float) Math.random() * configManager.get(Config::getCanvasSizeHeight);
-                    final Box box = new Box(eventManager, x, y, (int) (Math.random() * 25) + 1f);
-                    return Map.entry(box.id(UUID.randomUUID(), "main"), box);
-                })
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+            .withComponents(new HashMap<>())
             .withEventManager(eventManager)
             .build();
+
+        IntStream.range(0, 10)
+            .forEach(i -> {
+                final float x = (float) Math.random() * configManager.get(Config::getCanvasSizeWidth);
+                final float y = (float) Math.random() * configManager.get(Config::getCanvasSizeHeight);
+                final float s = (int) (Math.random() * 25) + 1f;
+                final UUID id = UUID.randomUUID();
+                entityManager.attach(id, "main", new Box(eventManager, entityManager));
+                entityManager.attach(id, "main", new Position(x, y, s));
+            });
 
         entityManager.attach(
             entityManager.getComponents()
