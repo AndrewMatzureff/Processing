@@ -3,37 +3,22 @@ package com.matzua.engine.app;
 import com.matzua.engine.app.config.Config;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.core.LayerManager;
-import com.matzua.engine.entity.Component;
 import com.matzua.engine.entity.EntityManager;
-import com.matzua.engine.event.Event;
 import com.matzua.engine.renderer.Renderer;
-import com.matzua.engine.renderer.geom.Box;
 import com.matzua.engine.util.Fun;
-import com.matzua.engine.util.SequenceMap;
-import lombok.RequiredArgsConstructor;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.event.KeyEvent;
 import processing.opengl.PGraphicsOpenGL;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.matzua.engine.app.ConfigManager.accessors;
 
 public class App extends PApplet {
     //// Ad-Hoc Testing... \\ -------------------------------------------------------------------------------------- \\
-    final Map<Integer, Double> states = new HashMap<>();
     private final EntityManager entityManager;
     private final Renderer renderer;
-    private final int playerId;
     // -------------------------------------------------------------------------------------- // ...Ad-Hoc Testing \\\\
     private final ConfigManager<Config> configManager;
     private final EventManager eventManager;
@@ -47,15 +32,13 @@ public class App extends PApplet {
         Renderer renderer,
         ConfigManager<Config> configManager,
         EventManager eventManager,
-        LayerManager layerManager,
-        @Named(value = "App.playerId") int playerId
+        LayerManager layerManager
     ) {
         this.entityManager = entityManager;
         this.renderer = renderer;
         this.configManager = configManager;
         this.eventManager = eventManager;
         this.layerManager = layerManager;
-        this.playerId = playerId;
     }
 
     /**
@@ -105,43 +88,9 @@ public class App extends PApplet {
             configManager.get(Config::getCanvasSizeHeight),
             P3D
         );
-
-        // Adapt raw Processing KeyEvent into internal domain Event type...
-        eventManager.adapt(KeyEvent.class, e -> switch (e.getAction()) {
-            case KeyEvent.PRESS -> new Event.Input.Device(e.getKeyCode(), 1.0);
-            case KeyEvent.RELEASE -> new Event.Input.Device(e.getKeyCode(), 0.0);
-            case KeyEvent.TYPE -> new Event.Input.Text(e.getKey());
-            default -> throw new IllegalStateException("Unexpected value: " + e.getAction());
-        });
-
-        // Create subscription to update global input states based on device events.
-        eventManager.subscribe(Event.Input.Device.class, e -> states.put(e.axis(), e.state()));
     }
 
     public void draw() {
-        // Process input-dependent state changes...
-        Map.of(
-            'W', new double[] { 0.0,-1.0},
-            'A', new double[] {-1.0, 0.0},
-            'S', new double[] { 0.0, 1.0},
-            'D', new double[] { 1.0, 0.0})
-            .entrySet()
-            .stream()
-            .map(e -> {
-                e.getValue()[0] *= states.getOrDefault((int) e.getKey(), 0.0);
-                e.getValue()[1] *= states.getOrDefault((int) e.getKey(), 0.0);
-                return e.getValue();
-            })
-            .reduce((e1, e2) -> new double[]{e1[0] + e2[0], e1[1] + e2[1]})
-            .ifPresent(d -> {
-                final EntityManager.Entity player = entityManager.getEntity(playerId);
-                player.message(Component.id("main", Box.class), box -> {
-                    box.setX(box.getX() + (float) d[0]);
-                    box.setY(box.getY() + (float) d[1]);
-                });
-            });
-        // ...
-
         push();
         renderer.render(canvas);
         if (canvas != null) {

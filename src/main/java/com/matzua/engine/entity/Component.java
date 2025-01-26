@@ -1,16 +1,23 @@
 package com.matzua.engine.entity;
 
-import com.matzua.engine.util.Types;
-
+import java.util.UUID;
 import java.util.function.Consumer;
 
+import static com.matzua.engine.util.Types.cast;
+
 public interface Component {
-    record Id<T extends Component>(String descriptor, Class<T> type) {}
-    static <T extends Component> Id<T> id(String descriptor, Class<T> type) {
-        return new Id<>(descriptor, type);
+    record Id<T extends Component>(UUID entity, String descriptor, Class<T> type) {}
+    static <T extends Component> Id<T> id(UUID entity, String descriptor, Class<T> type) {
+        return new Id<>(entity, descriptor, type);
     }
-    void onTick();
+    static <T extends Component> void tick(Id<T> id, Component component) {
+        component.onTick(id);
+    }
+    void onTick(Id<?> id);
     default <T extends Component> void onMessage(Consumer<T> message) {
-        Types.cast(message).accept(this);
+        cast(message).accept(this);
+    }
+    default <T extends Component> Id<T> id(UUID entity, String descriptor) {
+        return new Id<>(entity, descriptor, cast(this.getClass()));
     }
 }
