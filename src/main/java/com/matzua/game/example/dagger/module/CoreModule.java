@@ -3,17 +3,17 @@ package com.matzua.game.example.dagger.module;
 import com.matzua.engine.app.ConfigManager;
 import com.matzua.engine.app.config.Config;
 import com.matzua.engine.core.EventManager;
-import com.matzua.engine.entity.Component;
 import com.matzua.engine.entity.EntityManager;
+import com.matzua.engine.input.InputController;
 import com.matzua.engine.renderer.Renderer;
 import com.matzua.engine.renderer.geom.Box;
 import com.matzua.engine.util.Fun;
 import com.matzua.engine.util.SequenceMap;
+import com.matzua.engine.util.Validation;
 import dagger.Module;
 import dagger.Provides;
 import processing.core.PGraphics;
 
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,20 +56,28 @@ public interface CoreModule {
     @Provides
     @Singleton
     static EntityManager provideEntityManager(EventManager eventManager, ConfigManager<Config> configManager) {
-        return EntityManager.builder()
-            .withEntities(IntStream.range(0, 10)
-                .mapToObj(i -> new float[] {
-                    (float) Math.random() * configManager.get(Config::getCanvasSizeWidth),
-                    (float) Math.random() * configManager.get(Config::getCanvasSizeHeight)
+        final EntityManager entityManager = EntityManager.builder()
+            .withComponents(IntStream.range(0, 10)
+                .mapToObj(i -> {
+                    final float x = (float) Math.random() * configManager.get(Config::getCanvasSizeWidth);
+                    final float y = (float) Math.random() * configManager.get(Config::getCanvasSizeHeight);
+                    final Box box = new Box(eventManager, x, y, (int) (Math.random() * 25) + 1f);
+                    return Map.entry(box.id(UUID.randomUUID(), "main"), box);
                 })
-                .map(xy -> new EntityManager.Entity(
-                    eventManager,
-                    Map.of(new Component.Id<>("main", Box.class),
-                        new Box(eventManager, xy[0], xy[1], (int) (Math.random() * 25) + 1f))
-                ))
-                .collect(Collectors.toList()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
             .withEventManager(eventManager)
             .build();
+
+        entityManager.attach(
+            entityManager.getComponents()
+                .keySet()
+                .stream()
+                .findAny()
+                .orElseThrow(Validation::newPlaceholderError)
+                .entity(),
+            "main",
+            new InputController(entityManager, eventManager));
+        return entityManager;
     }
 
     @Provides
@@ -79,16 +87,5 @@ public interface CoreModule {
             .withEventManager(eventManager)
             .withOperations(new SequenceMap.Impl<>(HashMap::new, LinkedList::new))
             .build();
-    }
-
-    @Provides
-    @Named(value = "App.playerId")
-    static int provideApp$playerId(EntityManager entityManager, EventManager eventManager) {
-        // TODO: revise as this seems... weird but it's fine for now.
-        return entityManager.addEntity(new EntityManager.Entity(
-            eventManager,
-            Map.of(new Component.Id<>("main", Box.class),
-                new Box(eventManager, 0, 0, (int) (Math.random() * 25) + 1f))
-        ));
     }
 }
