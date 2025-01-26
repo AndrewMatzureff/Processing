@@ -1,10 +1,10 @@
-package com.matzua.engine.input;
+package com.matzua.engine.component.input;
 
+import com.matzua.engine.component.scene.Position;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.entity.Component;
 import com.matzua.engine.entity.EntityManager;
 import com.matzua.engine.event.Event;
-import com.matzua.engine.renderer.geom.Box;
 import processing.event.KeyEvent;
 
 import java.util.HashMap;
@@ -45,9 +45,9 @@ public class InputController implements Component {
                 })
                 .reduce((e1, e2) -> new double[]{e1[0] + e2[0], e1[1] + e2[1]})
                 .ifPresent(d -> {
-                    entityManager.message(Component.id(id.entity(), "main", Box.class), box -> {
-                        box.setX(box.getX() + (float) d[0]);
-                        box.setY(box.getY() + (float) d[1]);
+                    entityManager.message(Component.id(id.entity(), "main", Position.class), position -> {
+                        position.setX(position.getX() + (float) d[0]);
+                        position.setY(position.getY() + (float) d[1]);
                     });
                 });
         // ...
