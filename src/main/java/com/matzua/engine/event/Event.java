@@ -19,4 +19,5 @@ public interface Event {
     default void consume(Consumer<Event> consumer) {
         consumer.accept(this);
     }
+    record Camera(float x, float y, float z) implements Event {}
 }

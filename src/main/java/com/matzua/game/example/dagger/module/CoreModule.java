@@ -2,6 +2,7 @@ package com.matzua.game.example.dagger.module;
 
 import com.matzua.engine.app.ConfigManager;
 import com.matzua.engine.app.config.Config;
+import com.matzua.engine.component.scene.Camera;
 import com.matzua.engine.component.scene.Position;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.entity.EntityManager;
@@ -62,25 +63,25 @@ public interface CoreModule {
             .withEventManager(eventManager)
             .build();
 
-        IntStream.range(0, 10)
+        final int w = configManager.get(Config::getCanvasSizeWidth);
+        final int h = configManager.get(Config::getCanvasSizeHeight);
+
+        IntStream.range(0, 99)
             .forEach(i -> {
-                final float x = (float) Math.random() * configManager.get(Config::getCanvasSizeWidth);
-                final float y = (float) Math.random() * configManager.get(Config::getCanvasSizeHeight);
+                final float x = (float) Math.random() * w - w / 2f;
+                final float y = (float) Math.random() * h - h / 2f;
                 final float s = (int) (Math.random() * 25) + 1f;
                 final UUID id = UUID.randomUUID();
                 entityManager.attach(id, "main", new Box(eventManager, entityManager));
                 entityManager.attach(id, "main", new Position(x, y, s));
             });
 
-        entityManager.attach(
-            entityManager.getComponents()
-                .keySet()
-                .stream()
-                .findAny()
-                .orElseThrow(Validation::newPlaceholderError)
-                .entity(),
-            "main",
-            new InputController(entityManager, eventManager));
+        final UUID player = UUID.randomUUID();
+        entityManager
+            .attach(player, "main", new Box(eventManager, entityManager))
+            .attach(player, "main", new Position(0, 0, 25))
+            .attach(player, "main", new InputController(entityManager, eventManager))
+            .attach(player, "main", new Camera(eventManager, entityManager));
         return entityManager;
     }
 

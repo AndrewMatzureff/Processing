@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import static com.matzua.engine.util.Types.cast;
 
 public interface Component {
+    // TODO: possibly consider allowing multiple descriptors somehow (i.e.: tags)...
     record Id<T extends Component>(UUID entity, String descriptor, Class<T> type) {}
     static <T extends Component> Id<T> id(UUID entity, String descriptor, Class<T> type) {
         return new Id<>(entity, descriptor, type);
