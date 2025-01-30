@@ -8,10 +8,12 @@ import com.matzua.engine.event.Event;
 public class Camera implements Component {
     private final EventManager eventManager;
     private final EntityManager entityManager;
+    private final float fov;
 
-    public Camera(EventManager eventManager, EntityManager entityManager) {
+    public Camera(EventManager eventManager, EntityManager entityManager, float fov) {
         this.eventManager = eventManager;
         this.entityManager = entityManager;
+        this.fov = fov;
     }
 
     @Override
@@ -27,7 +29,8 @@ public class Camera implements Component {
                     new Event.Camera(
                         position.getX(),
                         position.getY(),
-                        0
+                        position.getZ(),
+                        (float) Math.toRadians(fov)
                     )
                 );
             }

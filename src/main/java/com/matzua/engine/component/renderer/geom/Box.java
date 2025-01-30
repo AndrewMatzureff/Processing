@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 public class Box implements Component {
     private final EventManager eventManager;
     private final EntityManager entityManager;
+    private final float size;
     @Override
     public void onTick(Id<?> id) {
         entityManager.message(
@@ -23,7 +24,8 @@ public class Box implements Component {
                 new Event.Render.Box(
                     position.getX(),
                     position.getY(),
-                    position.getS()
+                    position.getZ(),
+                    size
                 )
             )
         );

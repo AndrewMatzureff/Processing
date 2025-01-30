@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class Position implements Component {
-    private float x, y, s;
+    private float x, y, z;
     @Override
     public void onTick(Id<?> id) {}
 }

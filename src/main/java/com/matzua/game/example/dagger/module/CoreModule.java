@@ -2,6 +2,7 @@ package com.matzua.game.example.dagger.module;
 
 import com.matzua.engine.app.ConfigManager;
 import com.matzua.engine.app.config.Config;
+import com.matzua.engine.component.renderer.geom.WirePath;
 import com.matzua.engine.component.scene.Camera;
 import com.matzua.engine.component.scene.Position;
 import com.matzua.engine.core.EventManager;
@@ -11,14 +12,12 @@ import com.matzua.engine.renderer.Renderer;
 import com.matzua.engine.component.renderer.geom.Box;
 import com.matzua.engine.util.Fun;
 import com.matzua.engine.util.SequenceMap;
-import com.matzua.engine.util.Validation;
 import dagger.Module;
 import dagger.Provides;
 import processing.core.PGraphics;
 
 import javax.inject.Singleton;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.matzua.engine.app.ConfigManager.accessors;
@@ -70,18 +69,26 @@ public interface CoreModule {
             .forEach(i -> {
                 final float x = (float) Math.random() * w - w / 2f;
                 final float y = (float) Math.random() * h - h / 2f;
+                final float z = (float) Math.random() * (w - h) - (w - h) / 2f;
                 final float s = (int) (Math.random() * 25) + 1f;
                 final UUID id = UUID.randomUUID();
-                entityManager.attach(id, "main", new Box(eventManager, entityManager));
-                entityManager.attach(id, "main", new Position(x, y, s));
+                entityManager.attach(id, "main", new Box(eventManager, entityManager, s));
+                entityManager.attach(id, "main", new Position(x, y, z));
             });
 
         final UUID player = UUID.randomUUID();
+        final UUID wirePath  = UUID.randomUUID();
         entityManager
-            .attach(player, "main", new Box(eventManager, entityManager))
-            .attach(player, "main", new Position(0, 0, 25))
+            .attach(player, "main", new Box(eventManager, entityManager, 50))
+            .attach(player, "main", new Position(0, 0, 0))
             .attach(player, "main", new InputController(entityManager, eventManager))
-            .attach(player, "main", new Camera(eventManager, entityManager));
+            .attach(player, "main", new Camera(eventManager, entityManager, 160))
+            .attach(wirePath, "main", new Position(0, 0, 0))
+            .attach(wirePath, "main", WirePath.builder()
+                .withEntityManager(entityManager)
+                .withEventManager(eventManager)
+                .withPoints(WirePath.sphere(100, 0, 0, 0, 1))
+                .build());
         return entityManager;
     }
 

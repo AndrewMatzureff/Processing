@@ -1,5 +1,6 @@
 package com.matzua.engine.event;
 
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -14,10 +15,14 @@ public interface Event {
         default <T> Consumer<Event> withGraphics(T canvas, BiConsumer<T, Render> operation) {
             return cast((Render e) -> operation.accept(canvas, e));
         }
-        record Box(float x, float y, float s) implements Render {}
+        record Box(float x, float y, float z, float s) implements Render {}
+        record WirePath(float x,
+                        float y,
+                        float z,
+                        List<com.matzua.engine.component.renderer.geom.WirePath.Point> points) implements Render {}
     }
     default void consume(Consumer<Event> consumer) {
         consumer.accept(this);
     }
-    record Camera(float x, float y, float z) implements Event {}
+    record Camera(float x, float y, float z, float fov) implements Event {}
 }
