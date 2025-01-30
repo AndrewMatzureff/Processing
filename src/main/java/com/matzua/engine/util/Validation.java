@@ -2,6 +2,7 @@ package com.matzua.engine.util;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.matzua.engine.util.Fun.*;
@@ -22,13 +23,12 @@ public interface Validation {
     static Supplier<RuntimeException> newPlaceholderError(String message) {
         return () -> new RuntimeException(message);
     }
-//    static void requireNull(Object... objects) {
-//        requireNull("TODO: update this message!", objects);
-//    }
-//
-//    static void requireNull(String message, Object... objects) {
-//        if (Arrays.stream(objects).anyMatch(Objects::nonNull)) {
-//            throw new IllegalArgumentException(message);
-//        }
-//    }
+
+    static Consumer<Runnable> ifAllPresent(Object...dependencies) {
+        if (Arrays.stream(dependencies)
+            .allMatch(Objects::nonNull)) {
+            return Runnable::run;
+        }
+        return runnable -> {};
+    }
 }

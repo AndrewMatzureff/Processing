@@ -10,6 +10,8 @@ import processing.event.KeyEvent;
 import java.util.HashMap;
 import java.util.Map;
 
+import static processing.core.PConstants.SHIFT;
+
 public class InputController implements Component {
     private final Map<Integer, Double> states = new HashMap<>();
     private final EntityManager entityManager;
@@ -32,6 +34,7 @@ public class InputController implements Component {
     @Override
     public void onTick(Id<?> id) {
         // Process input-dependent state changes...
+        final double speed = states.getOrDefault(SHIFT, 0d) * 4 + 1;
         Map.of( 'W', new double[] { 0.0,-1.0},
                 'A', new double[] {-1.0, 0.0},
                 'S', new double[] { 0.0, 1.0},
@@ -39,15 +42,15 @@ public class InputController implements Component {
                 .entrySet()
                 .stream()
                 .map(e -> {
-                    e.getValue()[0] *= states.getOrDefault((int) e.getKey(), 0.0);
-                    e.getValue()[1] *= states.getOrDefault((int) e.getKey(), 0.0);
+                    e.getValue()[0] *= states.getOrDefault((int) e.getKey(), 0.0) * speed;
+                    e.getValue()[1] *= states.getOrDefault((int) e.getKey(), 0.0) * speed;
                     return e.getValue();
                 })
                 .reduce((e1, e2) -> new double[]{e1[0] + e2[0], e1[1] + e2[1]})
                 .ifPresent(d -> {
                     entityManager.message(Component.id(id.entity(), "main", Position.class), position -> {
                         position.setX(position.getX() + (float) d[0]);
-                        position.setY(position.getY() + (float) d[1]);
+                        position.setZ(position.getZ() + (float) d[1]);
                     });
                 });
         // ...
