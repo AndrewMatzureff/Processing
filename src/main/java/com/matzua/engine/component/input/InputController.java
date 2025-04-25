@@ -5,7 +5,11 @@ import com.matzua.engine.core.EventManager;
 import com.matzua.engine.entity.Component;
 import com.matzua.engine.entity.EntityManager;
 import com.matzua.engine.event.Event;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import processing.event.KeyEvent;
+import processing.event.MouseEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +17,15 @@ import java.util.Map;
 import static processing.core.PConstants.SHIFT;
 
 public class InputController implements Component {
+    public record MouseContextEvent(int mouseX,
+                                    int mouseY,
+                                    int previousMouseX,
+                                    int previousMouseY,
+                                    int windowWidth,
+                                    int windowHeight) implements Event.Input {}
+    @Getter
+    @Setter(value = AccessLevel.PRIVATE)
+    private MouseContextEvent mouseContextEvent = null;
     private final Map<Integer, Double> states = new HashMap<>();
     private final EntityManager entityManager;
     private final EventManager eventManager;
@@ -30,6 +43,9 @@ public class InputController implements Component {
 
         // Create subscription to update input states based on device events.
         eventManager.subscribe(Event.Input.Device.class, e -> states.put(e.axis(), e.state()));
+
+        // Create subscription to update input states based on device events.
+        eventManager.subscribe(MouseContextEvent.class, this::setMouseContextEvent);
     }
     @Override
     public void onTick(Id<?> id) {
@@ -50,7 +66,7 @@ public class InputController implements Component {
                 .ifPresent(d -> {
                     entityManager.message(Component.id(id.entity(), "main", Position.class), position -> {
                         position.setX(position.getX() + (float) d[0]);
-                        position.setZ(position.getZ() + (float) d[1]);
+                        position.setY(position.getY() + (float) d[1]);
                     });
                 });
         // ...

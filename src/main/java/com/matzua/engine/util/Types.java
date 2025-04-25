@@ -1,11 +1,18 @@
 package com.matzua.engine.util;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public interface Types {
+    static <T, U, V, W> BiConsumer<T, U> cast(BiConsumer<V, W> biConsumer) {
+        return Optional.of(biConsumer)
+            .map(BiConsumer.class::cast)
+            .map(Function.<BiConsumer<T, U>>identity()::apply)
+            .orElseThrow(Validation::newPlaceholderError);
+    }
     static <T, U> Consumer<T> cast(Consumer<U> consumer) {
         return Optional.of(consumer)
             .map(Consumer.class::cast)

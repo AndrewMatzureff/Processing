@@ -40,13 +40,18 @@ public class EventManager {
     }
 
     public <T> void dispatch(@NonNull final T event) {
-        final Event domainEvent = (Event) (Optional.of(event)
+        final Function<Object, Event> adapter = Optional.of(event)
             .map(Object::getClass)
             .map(adapters::get)
             .map(Function.class::cast)
             .map(Function.<Function<Object, Event>>identity()::apply)
-            .orElse(toEvent)
-            .apply(event));
+            .orElse(toEvent);
+
+        dispatch(event, adapter);
+    }
+
+    public <T, E extends Event> void dispatch(@NonNull final T event, @NonNull final Function<T, E> adapter) {
+        final Event domainEvent = adapter.apply(event);
 
         Optional.of(domainEvent)
             .map(Event::getClass)

@@ -1,24 +1,33 @@
 package com.matzua.engine.app;
 
 import com.matzua.engine.app.config.Config;
+import com.matzua.engine.component.input.InputController;
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.core.LayerManager;
+import com.matzua.engine.entity.Component;
 import com.matzua.engine.entity.EntityManager;
+import com.matzua.engine.event.Event;
 import com.matzua.engine.renderer.Renderer;
+import com.matzua.engine.renderer.rays.RayCaster;
 import com.matzua.engine.util.Fun;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.event.KeyEvent;
+import processing.event.MouseEvent;
 import processing.opengl.PGraphicsOpenGL;
 
 import javax.inject.Inject;
+
+import java.util.function.Consumer;
 
 import static com.matzua.engine.app.ConfigManager.accessors;
 
 public class App extends PApplet {
     //// Ad-Hoc Testing... \\ -------------------------------------------------------------------------------------- \\
+//    public record AppDebug(App app) implements Event {}
+//    private final AppDebug appDebug = new AppDebug(this);
     private final EntityManager entityManager;
-    private final Renderer renderer;
+    private final RayCaster renderer;
     // -------------------------------------------------------------------------------------- // ...Ad-Hoc Testing \\\\
     private final ConfigManager<Config> configManager;
     private final EventManager eventManager;
@@ -29,7 +38,7 @@ public class App extends PApplet {
     @Inject
     public App(
         EntityManager entityManager,
-        Renderer renderer,
+        RayCaster renderer,
         ConfigManager<Config> configManager,
         EventManager eventManager,
         LayerManager layerManager
@@ -88,6 +97,7 @@ public class App extends PApplet {
             configManager.get(Config::getCanvasSizeHeight),
             P3D
         );
+        //canvas.textFont(createFont("andalemo.ttf", 128));
     }
 
     public void draw() {
@@ -99,6 +109,21 @@ public class App extends PApplet {
         pop();
 
         entityManager.tick();
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent mouseEvent) {
+        eventManager.dispatch(
+            mouseEvent,
+            e -> new InputController.MouseContextEvent(
+                e.getX(),
+                e.getY(),
+                pmouseX,
+                pmouseY,
+                width,
+                height
+            )
+        );
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.matzua.engine.event;
 
+import processing.core.PGraphics;
+
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -12,6 +14,7 @@ public interface Event {
         record Text(char character) implements Input {}
     }
     interface Render extends Event {
+        default void render(PGraphics canvas) {}
         default <T> Consumer<Event> withGraphics(T canvas, BiConsumer<T, Render> operation) {
             return cast((Render e) -> operation.accept(canvas, e));
         }

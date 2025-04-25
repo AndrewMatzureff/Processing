@@ -2,6 +2,7 @@ package com.matzua.engine.renderer;
 
 import com.matzua.engine.core.EventManager;
 import com.matzua.engine.event.Event;
+import com.matzua.engine.renderer.rays.geom.RayCast;
 import com.matzua.engine.util.Initializer;
 import com.matzua.engine.util.SequenceMap;
 import lombok.*;
@@ -11,7 +12,7 @@ import processing.core.PGraphics;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static com.matzua.engine.util.Types.cast;
 import static com.matzua.engine.util.Validation.ifAllPresent;
@@ -26,7 +27,9 @@ public class Renderer {
     @NonFinal
     Event.Camera camera;
     @Builder.Default
-    SequenceMap<Event.Render, Consumer<Event.Render>> operations = new SequenceMap.Impl<>(HashMap::new, LinkedList::new);
+    SequenceMap<Event.Render, /*Consumer<*/Event.Render/*>*/> operations = new SequenceMap.Impl<>(HashMap::new, LinkedList::new);
+    @Builder.Default
+    List<Event.Render> ops = new LinkedList<>();
     public void render(PGraphics canvas) {
         this.canvas = canvas;
         ifAllPresent(canvas, camera).accept(() -> {
@@ -56,12 +59,12 @@ public class Renderer {
         canvas.box(e.s());
         canvas.pop();
     }
-    public void renderWirePath(Event.Render.WirePath e) {
+    public void renderWirePath(Event.Render.WirePath e, PGraphics canvas) {
         int offset = (int) System.currentTimeMillis();
         canvas.push();
         e.points()
             .stream()
-            .filter(point -> e.z() + point.z() != 0)
+            //.filter(point -> e.z() + point.z() != 0)
             .reduce((a, b) -> {
                 final float xa = e.x() + a.x();
                 final float ya = e.y() + a.y();
@@ -82,10 +85,17 @@ public class Renderer {
 
     // b_x = d_x * s_x / (d_z * r_x) * r_z
     // b_y = d_y * s_y / (d_z * r_y) * r_z
+    public void render(Event event) {
+        Optional.of(event)
+            .map(Event.Render.class::cast)
+            .ifPresent(render -> render.render(canvas));
+    }
     private Renderer init() {
+        Stream.of(Event.Render.WirePath.class, Event.Render.Box.class, RayCast.Edge.RenderEvent.class)
+            .forEach(type -> eventManager.subscribe(type, ops::add));
+
+        //
         eventManager.subscribe(Event.Render.Camera.class, e -> this.camera = e);
-        eventManager.subscribe(Event.Render.WirePath.class, e -> operations.putLast(e, cast(this::renderWirePath)));
-        eventManager.subscribe(Event.Render.Box.class, e -> operations.putLast(e, cast(this::renderBox)));
         return this;
     }
     public static class RendererBuilder implements Initializer<Renderer> {
