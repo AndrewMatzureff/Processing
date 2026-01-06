@@ -195,20 +195,9 @@ public class RayCaster {
             final CartesianGrid.Step step = maybeStep.get();
             final float x = step.x();// + step.xIncrement();
             final float y = step.y();// + step.yIncrement();
-            final float z = camera.z();
-            final int c = 0xff000000 |
-                (step.edgeSeen() == 0 ? 0 : 255) << 16
-                    |
-                (step.edgeSeen() == 0 ? 125 : 0) << 8
-                    |
-                (step.edgeSeen() == 0 ? 125 : 0);
             xTerm = x + step.xHitOffset();
             yTerm = y + step.yHitOffset();
-            //canvas.push();
-            //canvas.translate(x, y, z);
-            //canvas.rotateY(System.nanoTime() / 1000000000f * PConstants.PI * 2f);
             canvas.stroke(step.edgeSeen() == 0 ? 0 : 255, step.edgeSeen() == 0 ? 125 : 0, step.edgeSeen() == 0 ? 125 : 0);
-//            if (step.edgeSeen() != 0 && Math.random() < 0.5) {
             canvas.push();
                 canvas.strokeWeight(9);
                 canvas.beginShape(PConstants.POINTS);
@@ -218,46 +207,10 @@ public class RayCaster {
 //            }
             canvas.stroke(255);
             canvas.noFill();
-//            canvas.beginShape(PConstants.LINES);
-            ////canvas.vertex(x, y, z);
-            //canvas.vertex(x+marchIncrement * (float) Math.cos(marchAngle), y+marchIncrement * (float) Math.sin(marchAngle), z);
-//             canvas.vertex(x + step.xHitOffset(), y + step.yHitOffset(), z);
-            ////canvas.vertex(x + step.xIncrement(), y + step.yIncrement(), z);
-            // <increment corner>
-//        canvas.vertex(x+step.xIncrement(), y, z);
-//        canvas.vertex(x+step.xIncrement(), y+step.yIncrement(), z);
-//        canvas.vertex(x, y+step.yIncrement(), z);
-//        canvas.vertex(x+step.xIncrement(), y+step.yIncrement(), z);
-            // </increment corner>
-            // <quadrant axes>
-//            canvas.vertex(x, y - (scene.yLocal(y) + scene.scale() / 2), z);
-//            canvas.vertex(x, y + (scene.scale() / 2 - scene.yLocal(y)), z);
-//            canvas.vertex(x - (scene.xLocal(x) + scene.scale() / 2), y, z);
-//            canvas.vertex(x + (scene.scale() / 2 - scene.xLocal(x)), y, z);
-            // </quadrant axes>
-//            canvas.vertex(0, 0, z);
-//            canvas.vertex(step.xHit(), step.yHit(), z);
-            // <local to global>
-//            canvas.vertex(0,0,z);
-//            canvas.vertex(scene.xGlobal(scene.xLocal(step.x()), scene.columnAt(x)), scene.yGlobal(scene.yLocal(step.y()), scene.rowAt(y)), z);
-            // </local to global>
-//            canvas.endShape();
             canvas.color(255, 0, 0);
             canvas.textSize(48);
             canvas.text("(mouseX(w)=%f,mouseY(w)=%f)".formatted(mouse[0], mouse[1]), -500, 500);
             canvas.text("(mouseX(c)=%f,mouseY(c)=%f)".formatted(mouseX, mouseY), -500, 540);
-//            canvas.text("(columnIndex=%d, rowIndex=%d)"
-//                    .formatted(scene.columnToIndex(scene.columnAt(x)), scene.rowToIndex(scene.rowAt(y))),
-//                scene.columnAt(x) * scene.scale(), scene.rowAt(y) * scene.scale());
-//            canvas.text("(column=%d, row=%d)"
-//                    .formatted((scene.columnAt(x)), (scene.rowAt(y))),
-//                -scene.columnAt(x) * scene.scale(), scene.rowAt(y) * scene.scale() + scene.scale()/2);
-//        canvas.text("(% 3d, % 3d)".formatted(xCell, yCell), xCell *scene.scale(), yCell *scene.scale(), z);
-//        canvas.text("(% 1g, % 1g)".formatted(xLocal, yLocal), x + scene.scale(), y + scene.scale(), z);
-//        canvas.text("[%f, %f]".formatted(marchIncrement * marchAngleAdjacent, marchIncrement * marchAngleOpposite), x*0.25f, y*0.25f, z);
-//        canvas.text("cornerSlope=(%f/%f)=%f".formatted(cornerRise, cornerRun, cornerSlope), -500, -500, z);
-//        canvas.text("marchSlope=%f".formatted(marchSlope), -500, 510, z);
-//        canvas.text("edgeCrossed=%s".formatted(edgeCrossed), -500, 540, z);
             maybeStep = step.edgeSeen() != 0 ? Optional.empty() : scene.nextStep(marchAngle, x + step.xIncrement(), y + step.yIncrement());
         }
         canvas.beginShape(PConstants.LINES);
@@ -282,8 +235,8 @@ public class RayCaster {
             ;//.ifPresent(render -> render.render(canvas));
     }
     private RayCaster init() {
-        Stream.of(Event.Render.WirePath.class, Event.Render.Box.class, RayCast.Edge.RenderEvent.class)
-            .forEach(type -> eventManager.subscribe(type, ops::add));
+//        Stream.of(Event.Render.WirePath.class, Event.Render.Box.class, RayCast.Edge.RenderEvent.class)
+//            .forEach(type -> eventManager.subscribe(type, ops::add));
 
         eventManager.subscribe(CartesianGrid.class, this::setScene);
         eventManager.subscribe(Event.Camera.class, this::setCamera);
