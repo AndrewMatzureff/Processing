@@ -1,13 +1,13 @@
 package com.matzua.game.example.dagger.module;
 
 import com.matzua.engine.app.config.Config;
-import dagger.Module;
-import dagger.Provides;
+//import dagger.Module;
+//import dagger.Provides;
 
-@Module
+//@Module
 public interface ConfigModule {
-    @Provides
-    static Config provideConfig() {
-        return Config.builder().build();
-    }
+//    @Provides
+//    static Config provideConfig() {
+//        return Config.builder().build();
+//    }
 }
