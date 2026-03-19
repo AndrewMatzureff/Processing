@@ -1,11 +1,9 @@
-package com.matzua.engine.app;
+package com.matzua.engine.app.simple;
 
-//import javax.inject.Inject;
-
-import processing.core.PApplet;
+import com.matzua.engine.app.AbstractApp;
+import com.matzua.engine.app.interfaces.IEventManager;
 import processing.event.KeyEvent;
 
-//@ProcessingAPIFacade(api = {SimpleSystemInputEventDispatcher.class})
 public class SimpleApp extends AbstractApp implements
     SimpleSystemInputEventDispatcher {
     private final IEventManager eventManager;

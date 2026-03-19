@@ -1,7 +1,8 @@
 package com.matzua.engine.app;
 
+import com.matzua.engine.app.interfaces.IRenderer;
+import com.matzua.engine.app.interfaces.ISystemInput;
 import processing.core.PApplet;
-import processing.event.KeyEvent;
 
 public abstract class AbstractApp extends PApplet implements IRenderer, ISystemInput {
     public AbstractApp app() {return this;}

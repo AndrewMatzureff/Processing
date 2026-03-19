@@ -1,4 +1,4 @@
-package com.matzua.engine.app;
+package com.matzua.engine.app.interfaces;
 
 import java.util.function.Consumer;
 

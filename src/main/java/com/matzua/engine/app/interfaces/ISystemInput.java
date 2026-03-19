@@ -1,6 +1,5 @@
-package com.matzua.engine.app;
+package com.matzua.engine.app.interfaces;
 
-import processing.core.PApplet;
 import processing.event.KeyEvent;
 
 public interface ISystemInput extends ProcessingAPI {

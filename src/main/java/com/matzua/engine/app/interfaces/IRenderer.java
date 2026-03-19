@@ -1,4 +1,4 @@
-package com.matzua.engine.app;
+package com.matzua.engine.app.interfaces;
 
 public interface IRenderer extends ProcessingAPI {
     void draw();

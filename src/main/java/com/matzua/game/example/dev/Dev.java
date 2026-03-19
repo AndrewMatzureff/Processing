@@ -1,8 +1,8 @@
 package com.matzua.game.example.dev;
 
-import com.matzua.engine.app.SimpleApp;
+import com.matzua.engine.app.simple.SimpleApp;
 //import com.matzua.game.example.dagger.component.DaggerAppComponent;
-import com.matzua.engine.app.SimpleEventManager;
+import com.matzua.engine.app.simple.SimpleEventManager;
 import processing.core.PApplet;
 import processing.event.KeyEvent;
 
