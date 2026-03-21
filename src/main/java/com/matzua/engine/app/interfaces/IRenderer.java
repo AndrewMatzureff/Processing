@@ -1,5 +1,7 @@
 package com.matzua.engine.app.interfaces;
 
-public interface IRenderer extends ProcessingAPI {
-    void draw();
+import java.util.function.Consumer;
+
+public interface IRenderer {
+    void render();
 }

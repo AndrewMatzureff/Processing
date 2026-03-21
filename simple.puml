@@ -1,0 +1,104 @@
+@startuml
+skinparam titleBorderRoundCorner 15
+skinparam titleBorderThickness 2
+skinparam titleBorderColor red
+skinparam titleBackgroundColor Aqua-CadetBlue
+
+title GPJP Engine LLD (Core + User)
+header Diagram By Andrew Matzureff
+center footer https://andrewmatzureff.github.io/about/
+
+interface core.sys.ISystemRenderer <<ProcessingAPI>> {
+    + draw(): void
+}
+    
+interface core.sys.ISystemInput <<ProcessingAPI>> {
+    + keyPressed(KeyEvent): void
+    + keyReleased(KeyEvent): void
+    + keyTyped(KeyEvent): void
+}
+
+abstract class core.sys.AbstractApp <<PApplet>> implements core.sys.ISystemInput, core.sys.ISystemRenderer
+note left
+    All Processing <<PApplet>> fields and methods
+    are already accessible within AbstractApp.
+    The goal of the logical segregation of the
+    Core & User elements into various component
+    interfaces is to enable greater modularity
+    when working with Processing as a Java
+    library hopefully eliminating the need to
+    maintain a monolithic app class and ideally
+    to provide a framework which is more
+    conducive to the use of dependency injection.
+end note
+
+interface core.app.IEventManager {
+    + <EventType> dispatch(EventType): void
+    + <EventType> subscribe(Class<EventType>, Consumer<EventType>): void
+}
+
+interface core.app.IGameLoop {
+    + update(): void
+}
+
+interface core.app.IRenderer {
+    + render(): void
+}
+
+'_____________________________________________________________
+
+class user.simple.SimpleEventManager implements core.app.IEventManager {
+    - subscribers: Map<Class<?>, List<Consumer<?>>>
+    + <<override>> <EventType> dispatch(EventType): void
+    + <<override>> <EventType> subscribe(Class<EventType>, Consumer<EventType>): void
+}
+
+interface user.simple.SimpleSystemInputEventDispatcher extends core.sys.ISystemInput {
+    + getEventManager(): IEventManager
+    + <<override>> <<default>> keyPressed(KeyEvent): void
+    + <<override>> <<default>> keyReleased(KeyEvent): void
+    + <<override>> <<default>> keyTyped(KeyEvent): void
+}
+
+interface user.simple.SimpleEventLoopSystemRenderer extends core.sys.ISystemRenderer {
+    + getRenderer(): IRenderer
+    + getGameLoop(): IGameLoop
+    + getEventManager(): IEventManager
+    + <<override>> <<default>> draw(): void
+}
+
+class user.simple.SimpleApp extends core.sys.AbstractApp implements user.simple.SimpleSystemInputEventDispatcher, user.simple.SimpleEventLoopSystemRenderer {
+    - eventManager: IEventManager
+    - gameLoop: IGameLoop
+    - renderer: IRenderer
+    + <<override>> getEventManager(): IEventManager
+    + <<override>> <<default>> keyPressed(KeyEvent): void
+    + <<override>> <<default>> keyReleased(KeyEvent): void
+    + <<override>> <<default>> keyTyped(KeyEvent): void
+    + <<override>> getRenderer(): IRenderer
+    + <<override>> getGameLoop(): IGameLoop
+    + <<override>> <<default>> draw(): void
+}
+note right
+    Concrete methods overriding <<default>> implementations
+    can explicitly forward their execution to those default
+    implementations so long as the interface to which they
+    belong is a direct super class. For example, the default
+    implementation of SimpleEventLoopSystemRenderer::draw
+    can be invoked directly from the body of SimpleApp::draw
+    by invoking SimpleEventLoopSystemRenderer.super.draw().
+end note
+
+'_____________________________________________________________
+
+'ISystemRenderer --|> ProcessingAPI
+'ISystemInput --|> ProcessingAPI
+'AbstractApp ..|> ISystemInput
+'AbstractApp ..|> ISystemRenderer
+'AbstractApp --|> PApplet
+'App ...|> AbstractApp
+"core" ---[hidden]down "user"
+core.app.IEventManager --* user.simple.SimpleApp
+core.app.IGameLoop --* user.simple.SimpleApp
+core.app.IRenderer --* user.simple.SimpleApp
+@enduml

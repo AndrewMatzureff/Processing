@@ -11,7 +11,7 @@ import java.util.HashMap;
 public class Dev {
     public static void main(String[] args) {
 //        final AppComponent component = DaggerAppComponent.create();
-        final SimpleApp app = new SimpleApp(new SimpleEventManager(new HashMap<>()));//component.getApp();
+        final SimpleApp app = new SimpleApp(new SimpleEventManager(new HashMap<>()), null, null);//component.getApp();
         app.getEventManager().subscribe(KeyEvent.class, System.out::println);
         PApplet.runSketch(new String[] {"Dev"}, app);
     }

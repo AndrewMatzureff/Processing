@@ -2,19 +2,22 @@ package com.matzua.engine.app.simple;
 
 import com.matzua.engine.app.AbstractApp;
 import com.matzua.engine.app.interfaces.IEventManager;
+import com.matzua.engine.app.interfaces.IGameLoop;
+import com.matzua.engine.app.interfaces.IRenderer;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import processing.event.KeyEvent;
 
+@AllArgsConstructor
 public class SimpleApp extends AbstractApp implements
-    SimpleSystemInputEventDispatcher {
+    SimpleSystemInputEventDispatcher,
+    SimpleEventLoopSystemRenderer {
+    @Getter(onMethod_={@Override})
     private final IEventManager eventManager;
-    public SimpleApp(IEventManager eventManager) {
-        this.eventManager = eventManager;
-    }
-    @Override
-    public IEventManager getEventManager() {
-        return eventManager;
-    }
-
+    @Getter(onMethod_={@Override})
+    private final IGameLoop gameLoop;
+    @Getter(onMethod_={@Override})
+    private final IRenderer renderer;
     @Override
     public void keyPressed(KeyEvent event) {SimpleSystemInputEventDispatcher.super.keyPressed(event);}
     @Override

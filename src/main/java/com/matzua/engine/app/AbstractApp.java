@@ -1,10 +1,10 @@
 package com.matzua.engine.app;
 
-import com.matzua.engine.app.interfaces.IRenderer;
+import com.matzua.engine.app.interfaces.ISystemRenderer;
 import com.matzua.engine.app.interfaces.ISystemInput;
 import processing.core.PApplet;
 
-public abstract class AbstractApp extends PApplet implements IRenderer, ISystemInput {
+public abstract class AbstractApp extends PApplet implements ISystemRenderer, ISystemInput {
     public AbstractApp app() {return this;}
     public void settings() {
         size(320, 200);

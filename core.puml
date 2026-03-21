@@ -1,0 +1,56 @@
+@startuml
+skinparam titleBorderRoundCorner 15
+skinparam titleBorderThickness 2
+skinparam titleBorderColor red
+skinparam titleBackgroundColor Aqua-CadetBlue
+
+title GPJP Engine LLD (Core)
+header Diagram By Andrew Matzureff
+center footer https://andrewmatzureff.github.io/about/
+
+class processing.PApplet <<Raw Processing API>>
+    
+interface core.sys.ISystemRenderer {
+    +draw(): void
+}
+    
+interface core.sys.ISystemInput {
+    +keyPressed(KeyEvent): void
+    +keyReleased(KeyEvent): void
+    +keyTyped(KeyEvent): void
+}
+
+abstract class core.sys.AbstractApp
+
+'_____________________________________________________________
+
+class user.App <<User Defined Class>>
+
+'_____________________________________________________________
+
+interface core.app.ProcessingAPI <<Façade>> {
+    +app(): AbstractApp
+}
+
+interface core.app.IEventManager {
+    +<EventType> dispatch(EventType): void
+    +<EventType> subscribe(Class<EventType>, Consumer<EventType>): void
+}
+
+interface core.app.IGameLoop {
+    +update(): void
+}
+
+interface core.app.IRenderer {
+    +render(): void
+}
+
+'_____________________________________________________________
+
+ISystemRenderer --|> ProcessingAPI
+ISystemInput --|> ProcessingAPI
+AbstractApp ..|> ISystemInput
+AbstractApp ..|> ISystemRenderer
+AbstractApp --|> PApplet
+App ...|> AbstractApp
+@enduml

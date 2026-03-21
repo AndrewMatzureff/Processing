@@ -29,6 +29,8 @@ import static com.matzua.engine.app.ConfigManager.accessors;
 //@Module
 public interface CoreModule {
 //    @Provides
+//    static AbstractApp
+//    @Provides
 //    static ConfigManager<Config> provideConfigManager() {
 //        final ConfigManager<Config> configManager = ConfigManager.builder(Config.class)
 //            .withCurrent(Config.builder().build())
