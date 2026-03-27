@@ -1,0 +1,58 @@
+@startuml
+'participant Participant as Foo
+'actor       Actor       as Foo1
+'boundary    Boundary    as Foo2
+'control     Control     as Foo3
+'entity      Entity      as Foo4
+'database    Database    as Foo5
+'collections Collections as Foo6
+'queue       Queue       as Foo7
+'Foo -> Foo1 : To actor
+'Foo -> Foo2 : To boundary
+'Foo -> Foo3 : To control
+'Foo -> Foo4 : To entity
+'Foo -> Foo5 : To database
+'Foo -> Foo6 : To collections
+'Foo -> Foo7: To queue
+
+skinparam titleBorderRoundCorner 15
+skinparam titleBorderThickness 2
+skinparam titleBorderColor red
+skinparam titleBackgroundColor Aqua-CadetBlue
+
+title GPJP Engine Sequence Diagram (Core Game & Render Loop)
+header Diagram By Andrew Matzureff
+center footer https://andrewmatzureff.github.io/about/
+
+boundary "Processing Runtime" as app
+control SimpleEventLoopSystemRenderer as selsr
+participant IGameLoop as gl
+queue IEventManager as em
+participant IRenderer as r
+entity Entity as e
+
+app -> selsr:draw()
+    group #ffdddd Frame
+        group #ddddff Update Game State (world)
+            selsr -> gl:update()
+                loop #ffffdd all entities
+                    gl -> em:dispatch(<<entity interaction/behavior events>>)
+                    .........
+                    /'NOTE: Perhaps IRenderer should represent entity-scope
+                    rendering components (i.e.: SpriteRenderer, MeshRenderer,
+                    etc.).'/
+                    gl -> em:dispatch(<<entity render ready events>>)
+                end
+            selsr <- gl:update:void
+        end Update Game State (world)
+        group #ddffdd Update Game State (events) & Render
+            selsr -> em:flush()
+                loop #ffffdd all messages
+                    em -> e:consume(<<queued events>>)
+                    e -> r:render()
+                end
+            selsr <- em:flush:void
+        end Update Game State (events) & Render
+    end Frame
+app <- selsr:draw:void
+@enduml
