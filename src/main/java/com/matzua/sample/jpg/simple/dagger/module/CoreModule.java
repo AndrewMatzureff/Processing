@@ -41,7 +41,7 @@ public interface CoreModule {
     bindSubscribers() {return new HashMap<>();}
     @Provides
     @Singleton
-    static PGraphicsCanvasStore canvasStore() {return new PGraphicsCanvasStore(null, null);}
+    static PGraphicsCanvasStore canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>());}
     @Provides
     @Singleton
     static IGameLoop gameLoop() {return () -> {};}

@@ -1,6 +1,5 @@
 package com.matzua.jpg.core.sys;
 
-import com.matzua.jpg.core.app.ProcessingAPI;
 import processing.event.KeyEvent;
 
 public interface ISystemInput extends ProcessingAPI {

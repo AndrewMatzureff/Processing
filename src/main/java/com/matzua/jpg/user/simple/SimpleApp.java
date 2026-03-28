@@ -1,6 +1,7 @@
 package com.matzua.jpg.user.simple;
 
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsCanvasStore;
+import com.matzua.jpg.core.app.resource.canvas.PGraphicsRecipe;
 import com.matzua.jpg.core.sys.AbstractApp;
 import com.matzua.jpg.core.app.IEventManager;
 import com.matzua.jpg.core.app.IGameLoop;
@@ -23,30 +24,26 @@ public class SimpleApp extends AbstractApp implements
     private final IGameLoop gameLoop;
     @Getter(onMethod_={@Override})
     private final IRenderer renderer;
-    // ↓ Plug in system input module ↓ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    // ↓ Plug in system input module ↓ \\...............................................................................
     @Override
-    public void
-    keyPressed(KeyEvent event) {SimpleSystemInputEventDispatcher.super.keyPressed(event);}
+    public void keyPressed(KeyEvent event) {SimpleSystemInputEventDispatcher.super.keyPressed(event);}
     @Override
-    public void
-    keyReleased(KeyEvent event) {SimpleSystemInputEventDispatcher.super.keyReleased(event);}
+    public void keyReleased(KeyEvent event) {SimpleSystemInputEventDispatcher.super.keyReleased(event);}
     @Override
-    public void
-    keyTyped(KeyEvent event) {SimpleSystemInputEventDispatcher.super.keyTyped(event);}
-    // ↓ Plug in system renderer module ↓ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+    public void keyTyped(KeyEvent event) {SimpleSystemInputEventDispatcher.super.keyTyped(event);}
+    // ↓ Plug in system renderer module ↓ \.............................................................................
     @Override
     public void draw() {SimpleEventLoopSystemRenderer.super.draw();}
-    // ↓ Plug in system settings module ↓ \\
+    // ↓ Plug in system settings module ↓ \.............................................................................
     @Override
     public void settings() {
-        size(320, 200);
+        size(1920, 1080);
     }
-    // ↓ Plug in system setup module ↓ \\
+    // ↓ Plug in system setup module ↓ \................................................................................
     @Override
     public void setup() {
+        canvasStore.root("root", this);
+        canvasStore.create("main", canvasStore.getCanvasFactory(PGraphicsRecipe.from(this), 320, 200));
     }
-    // ↓ Misc. ↓ \\
-
-//    fill((int) System.nanoTime() | 0xff000000);
-//    rect(0,0,width,height);
+    // ↓ Misc. ↓ \......................................................................................................git
 }
