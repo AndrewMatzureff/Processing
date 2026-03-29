@@ -45,7 +45,7 @@ public class SimpleApp extends AbstractApp implements
     @Override
     public void setup() {
         canvasStore.root("root", this);
-        canvasStore.create("main", canvasStore.getCanvasFactory(
+        canvasStore.request("main", canvasStore.getCanvasFactory(
             PGraphicsRecipe.from(this),
             PGraphicsIngredients.from(320, 200)
         ));
