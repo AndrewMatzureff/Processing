@@ -1,5 +1,5 @@
 package com.matzua.jpg.core.app;
 
-public interface IGameLoop {
+public interface IGameState {
     void update();
 }

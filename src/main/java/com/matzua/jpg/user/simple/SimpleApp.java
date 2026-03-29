@@ -1,11 +1,13 @@
 package com.matzua.jpg.user.simple;
 
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsCanvasStore;
+import com.matzua.jpg.core.app.resource.canvas.PGraphicsIngredients;
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsRecipe;
+import com.matzua.jpg.core.app.resource.common.AbstractResourceStore;
 import com.matzua.jpg.core.sys.AbstractApp;
 import com.matzua.jpg.core.app.IEventManager;
-import com.matzua.jpg.core.app.IGameLoop;
-import com.matzua.jpg.core.app.IRenderer;
+import com.matzua.jpg.core.app.IGameState;
+import com.matzua.jpg.core.app.draw.IRenderer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import processing.event.KeyEvent;
@@ -17,11 +19,11 @@ public class SimpleApp extends AbstractApp implements
     SimpleSystemInputEventDispatcher,
     SimpleEventLoopSystemRenderer {
     @Getter(onMethod_={@Override})
-    private final PGraphicsCanvasStore canvasStore;
+    private final AbstractResourceStore canvasStore;
     @Getter(onMethod_={@Override})
     private final IEventManager eventManager;
     @Getter(onMethod_={@Override})
-    private final IGameLoop gameLoop;
+    private final IGameState gameState;
     @Getter(onMethod_={@Override})
     private final IRenderer renderer;
     // ↓ Plug in system input module ↓ \\...............................................................................
@@ -43,7 +45,10 @@ public class SimpleApp extends AbstractApp implements
     @Override
     public void setup() {
         canvasStore.root("root", this);
-        canvasStore.create("main", canvasStore.getCanvasFactory(PGraphicsRecipe.from(this), 320, 200));
+        canvasStore.create("main", canvasStore.getCanvasFactory(
+            PGraphicsRecipe.from(this),
+            PGraphicsIngredients.from(320, 200)
+        ));
     }
     // ↓ Misc. ↓ \......................................................................................................git
 }

@@ -14,15 +14,15 @@ package com.matzua.sample.jpg.simple.dagger.module;
 //import com.matzua.engine.util.SequenceMap;
 
 import com.matzua.jpg.core.app.IEventManager;
-import com.matzua.jpg.core.app.IGameLoop;
-import com.matzua.jpg.core.app.IRenderer;
+import com.matzua.jpg.core.app.IGameState;
+import com.matzua.jpg.core.app.draw.IRenderer;
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsCanvasStore;
+import com.matzua.jpg.core.app.resource.common.AbstractResourceStore;
 import com.matzua.jpg.user.simple.SimpleEventManager;
 import com.matzua.jpg.user.state.Type;
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
-import lombok.Getter;
 
 import javax.inject.Singleton;
 import java.util.HashMap;
@@ -41,10 +41,12 @@ public interface CoreModule {
     bindSubscribers() {return new HashMap<>();}
     @Provides
     @Singleton
-    static PGraphicsCanvasStore canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>());}
+    // TODO: make provider return interface IAppStore<ICanvas> and then inject ResourceFactory obtained from
+    //  PGraphicsCanvasStore::getResourceFactory separately
+    static AbstractResourceStore canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>());}
     @Provides
     @Singleton
-    static IGameLoop gameLoop() {return () -> {};}
+    static IGameState gameState() {return () -> {};}
     @Provides
     @Singleton
     static IRenderer renderer() {return () -> {};}
