@@ -1,5 +1,6 @@
 package com.matzua.jpg.user.state;
 
+import com.matzua.jpg.core.app.ICanvas;
 import com.matzua.jpg.core.app.IEventManager;
 import com.matzua.jpg.core.app.draw.IDraw;
 import com.matzua.jpg.core.app.draw.IRenderer;
@@ -10,7 +11,7 @@ import processing.core.PGraphics;
 
 @ToString
 public class Entity {
-    private final AbstractResourceStore canvasStore;
+    private final AbstractResourceStore<ICanvas> canvasStore;
     private final IEventManager eventManager;
     public float x = 0, y = 0;
     private final IRenderer renderer = new IRenderer() {
@@ -25,7 +26,7 @@ public class Entity {
         g.pop();
     }
 };
-    public Entity(AbstractResourceStore canvasStore, IEventManager eventManager) {
+    public Entity(AbstractResourceStore<ICanvas> canvasStore, IEventManager eventManager) {
         this.canvasStore = canvasStore;
         this.eventManager = eventManager;
 //        eventManager.subscribe(Type.extending(IRenderer.class), IRenderer::render);

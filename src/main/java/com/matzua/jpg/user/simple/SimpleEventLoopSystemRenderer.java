@@ -13,10 +13,10 @@ public interface SimpleEventLoopSystemRenderer extends ISystemRenderer {
     IRenderer getRenderer();
     IGameState getGameState();
     IEventManager getEventManager();
-    AbstractResourceStore getCanvasStore();
+    AbstractResourceStore<ICanvas> getCanvasStore();
     @Override
     default void draw() {
-        final AbstractResourceStore canvasStore = getCanvasStore();
+        final AbstractResourceStore<ICanvas> canvasStore = getCanvasStore();
         final IEventManager eventManager = getEventManager();
         final IGameState gameState = getGameState();
         final IRenderer renderer = getRenderer();

@@ -1,5 +1,6 @@
 package com.matzua.jpg.user.simple;
 
+import com.matzua.jpg.core.app.ICanvas;
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsCanvasStore;
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsIngredients;
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsRecipe;
@@ -19,7 +20,7 @@ public class SimpleApp extends AbstractApp implements
     SimpleSystemInputEventDispatcher,
     SimpleEventLoopSystemRenderer {
     @Getter(onMethod_={@Override})
-    private final AbstractResourceStore canvasStore;
+    private final AbstractResourceStore<ICanvas> canvasStore;
     @Getter(onMethod_={@Override})
     private final IEventManager eventManager;
     @Getter(onMethod_={@Override})
@@ -45,7 +46,7 @@ public class SimpleApp extends AbstractApp implements
     @Override
     public void setup() {
         canvasStore.root("root", this);
-        canvasStore.request("main", canvasStore.getCanvasFactory(
+        ((PGraphicsCanvasStore)canvasStore).request("main", ((PGraphicsCanvasStore)canvasStore).getTrustedFactory(
             PGraphicsRecipe.from(this),
             PGraphicsIngredients.from(320, 200)
         ));

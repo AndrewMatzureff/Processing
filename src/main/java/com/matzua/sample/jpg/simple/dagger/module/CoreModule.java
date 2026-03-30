@@ -13,6 +13,7 @@ package com.matzua.sample.jpg.simple.dagger.module;
 //import com.matzua.engine.util.Fun;
 //import com.matzua.engine.util.SequenceMap;
 
+import com.matzua.jpg.core.app.ICanvas;
 import com.matzua.jpg.core.app.IEventManager;
 import com.matzua.jpg.core.app.IGameState;
 import com.matzua.jpg.core.app.draw.IRenderer;
@@ -43,7 +44,7 @@ public interface CoreModule {
     @Singleton
     // TODO: make provider return interface IAppStore<ICanvas> and then inject ResourceFactory obtained from
     //  PGraphicsCanvasStore::getResourceFactory separately
-    static AbstractResourceStore canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>());}
+    static AbstractResourceStore<ICanvas> canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>());}
     @Provides
     @Singleton
     static IGameState gameState() {return () -> {};}
