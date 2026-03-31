@@ -2,74 +2,104 @@ package com.matzua.jpg.core.app.resource.canvas;
 
 import com.matzua.jpg.TestBase;
 import com.matzua.jpg.core.app.ICanvas;
-import com.matzua.jpg.core.app.resource.common.ResourceFactory;
+import com.matzua.jpg.core.sys.AbstractApp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import processing.core.PGraphics;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PGraphicsCanvasStoreTest extends TestBase {
-    // ↓ Test Class ↓ \____________________________________________________________________
+    // ↓ Test Class ↓ \................................................................................................:
     private PGraphicsCanvasStore testPGraphicsCanvasStore;
-    // ↓ Associations ↓ \__________________________________________________________________
-    private final String testMasterKey = "testMasterKey";
+    // ↓ Associations ↓ \..............................................................................................:
     private Map<String, ICanvas> testCanvasesById;
-    // ↓ Dependencies ↓ \__________________________________________________________________
+    // ↓ Dependencies ↓ \..............................................................................................:
+    private String testId;
     @Mock
-    private ResourceFactory<ICanvas> mockResourceFactory;
-    @Mock
-    private ICanvas mockCanvas;
-    // ↓ Misc. ↓ \_________________________________________________________________________
+    private AbstractApp mockApp;
+    // ↓ Misc. ↓ \.....................................................................................................:
     @BeforeEach
     public void setup() {
         super.setup();
         testCanvasesById = new HashMap<>();
-        testPGraphicsCanvasStore = new PGraphicsCanvasStore(testMasterKey, testCanvasesById);
+        testPGraphicsCanvasStore = new PGraphicsCanvasStore("testMasterKey", testCanvasesById);
+        testId = "testId";
     }
-    // ↓ create ↓ \________________________________________________________________________
+    // ↓ create ↓ \....................................................................................................:
     @Test
-    void when_create__given_valid_key_and_factory__then_new_canvas_entry_created() {
+    void when_create__given_valid_new_entry_with_real_inputs__then_create_new_resource_entry() {
         // given
-        final String testKey = "testKey";
-        when(mockResourceFactory.create(testMasterKey)).thenReturn(mockCanvas);
+        final PGraphics mockPGraphics = mock();
+        final int testWidth = 320, testHeight = 200;
+        final var resourceFactory = testPGraphicsCanvasStore
+            .getTrustedFactory(PGraphicsRecipe.from(mockApp), PGraphicsIngredients.from(testWidth, testHeight));
+        when(mockApp.createGraphics(testWidth, testHeight)).thenReturn(mockPGraphics);
         // when
-        testPGraphicsCanvasStore.create(testKey, mockResourceFactory);
+        testPGraphicsCanvasStore.create(testId, resourceFactory);
         // then
-        assertEquals(mockCanvas, testCanvasesById.get(testKey));
-        verify(mockResourceFactory).create(testMasterKey);
+        assertNotNull(testPGraphicsCanvasStore.get(testId));
+        assertEquals(mockPGraphics, testPGraphicsCanvasStore.get(testId).pGraphics());
     }
-    // ↓ get ↓ \___________________________________________________________________________
+    // ↓ getTrustedFactory ↓ \.........................................................................................:
     @Test
-    void when_get__given_valid_key_and_existing_entry__then_return_canvas() {
+    void when_getTrustedFactory__given_valid_recipe_and_ingredients__then_return_new_operational_trusted_factory() {
         // given
-        final String testKey = "testKey";
-        when(mockResourceFactory.create(testMasterKey)).thenReturn(mockCanvas);
-        testPGraphicsCanvasStore.create(testKey, mockResourceFactory);
+        final PGraphicsRecipe mockRecipe = mock();
+        final PGraphicsIngredients mockIngredients = mock();
+        final PGraphics mockPGraphics = mock();
+        final BiFunction<Integer, Integer, PGraphics> mockPGraphicsSource = mock();
+        final int testWidth = 320, testHeight = 200;
+        final var spyPGraphicsCanvasStore = spy(testPGraphicsCanvasStore);
+        when(mockRecipe.get()).thenReturn(mockPGraphicsSource);
+        when(mockIngredients.width()).thenReturn(testWidth);
+        when(mockIngredients.height()).thenReturn(testHeight);
+        when(mockPGraphicsSource.apply(testWidth, testHeight)).thenReturn(mockPGraphics);
         // when
-        final ICanvas result = testPGraphicsCanvasStore.get(testKey);
+        final var resourceFactory = spyPGraphicsCanvasStore.getTrustedFactory(mockRecipe, mockIngredients);
         // then
-        assertEquals(mockCanvas, testCanvasesById.get(testKey));
+        assertNotNull(resourceFactory);
+        verify(spyPGraphicsCanvasStore).getTrustedFactory(eq(mockRecipe), eq(mockIngredients), any());
+        spyPGraphicsCanvasStore.create(testId, resourceFactory);
+        assertNotNull(spyPGraphicsCanvasStore.get(testId));
+        assertEquals(mockPGraphics, spyPGraphicsCanvasStore.get(testId).pGraphics());
     }
-    // ↓ remove ↓ \________________________________________________________________________
+    // ↓ root ↓ \......................................................................................................:
     @Test
-    void when_remove__given_valid_key_and_existing_entry__then_remove_canvas() {
+    void when_root__given_valid_new_entry__then_create_new_root_resource_entry() {
         // given
-        final String testKey = "testKey";
-        when(mockResourceFactory.create(testMasterKey)).thenReturn(mockCanvas);
-        testPGraphicsCanvasStore.create(testKey, mockResourceFactory);
+        final String testInternalRootId = mockApp.toString();
+        final PGraphics mockPGraphics = mock();
+        when(mockApp.getGraphics()).thenReturn(mockPGraphics);
         // when
-        final ICanvas result = testPGraphicsCanvasStore.remove(testKey);
+        testPGraphicsCanvasStore.root(testId, mockApp);
         // then
-        assertFalse(testCanvasesById.containsKey(testKey));
-        assertEquals(mockCanvas, result);
+        assertNotNull(testPGraphicsCanvasStore.get(testId));
+        assertNotNull(testPGraphicsCanvasStore.get(testInternalRootId));
+        assertEquals(mockPGraphics, testPGraphicsCanvasStore.get(testId).pGraphics());
+        assertEquals(mockPGraphics, testPGraphicsCanvasStore.get(testInternalRootId).pGraphics());
+    }
+    // ↓ root ↓ \......................................................................................................:
+    @Test
+    void when_root__given_existing_entry__then_fail() {
+        // given
+        testPGraphicsCanvasStore.root(testId, mockApp);
+        // when & then
+        assertThrows(RuntimeException.class, () -> testPGraphicsCanvasStore.root("Different: " + testId, mockApp));
+    }
+    // ↓ Misc. ↓ \.....................................................................................................:
+    @Test
+    void when_new__given_null_master_key__then_fail() {
+        // given, when & then
+        assertThrows(NullPointerException.class, () -> new PGraphicsCanvasStore(null, testCanvasesById));
     }
 }

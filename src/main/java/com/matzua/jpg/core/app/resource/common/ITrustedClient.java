@@ -1,21 +1,18 @@
 package com.matzua.jpg.core.app.resource.common;
 
 public interface ITrustedClient extends ITrustedParticipant{
+    String FIX_CLIENT_MISSING_RECEIPT = "Ensure that your %s#auth(%s) implementation has properly set the "
+        .formatted(ITrustedParticipant.class.getSimpleName(), ITrustedClient.class.getSimpleName()) +
+        "receipt artifact in your trusted client.";
     void voidReceipt();
     boolean hasReceipt();
     void initTransaction();
     void completeTransaction();
-    boolean hasTransactionInProgress();
-    RuntimeException unauthorized();
+    RuntimeException unauthorized(String message);
+    @Override
     default void auth(ITrustedParticipant server) {
-        if (hasTransactionInProgress()) throw new RuntimeException(
-            "Tried to execute %s::%s while a transaction is already in progress!"
-                .formatted(ITrustedClient.class.getSimpleName(), "auth")
-        );
-        initTransaction();
         server.auth(this);
         if (hasReceipt()) voidReceipt();
-        else throw unauthorized();
-        completeTransaction();
+        else throw unauthorized(FIX_CLIENT_MISSING_RECEIPT);
     }
 }

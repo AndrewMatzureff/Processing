@@ -46,7 +46,8 @@ public class SimpleApp extends AbstractApp implements
     @Override
     public void setup() {
         canvasStore.root("root", this);
-        ((PGraphicsCanvasStore)canvasStore).request("main", ((PGraphicsCanvasStore)canvasStore).getTrustedFactory(
+        // TODO: replace generic AbstractResourceStore<ICanvas> with explicit PGraphicsCanvasStore to eliminate cast.
+        canvasStore.create("main", ((PGraphicsCanvasStore)canvasStore).getTrustedFactory(
             PGraphicsRecipe.from(this),
             PGraphicsIngredients.from(320, 200)
         ));
