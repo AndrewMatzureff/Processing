@@ -1,9 +1,9 @@
-import org.gradle.internal.impldep.bsh.commands.dir
+import org.gradle.kotlin.dsl.application
 
 plugins {
     id("java")
     id("jacoco")
-    id("io.freefair.lombok") version "8.6"
+    //id("io.freefair.lombok") version "9.2.0"
     application
 }
 
@@ -16,20 +16,22 @@ repositories {
 
 dependencies {
 
-    implementation("org.projectlombok:lombok:1.18.26")
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    implementation("org.projectlombok:lombok:1.18.44")
+
+    // Add the launcher as a testRuntimeOnly dependency to ensure it is available during test execution.
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // required if you want to use Mockito for unit tests
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
+    testImplementation("org.mockito:mockito-core:5.23.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.23.0")
 
     // lombok
-    compileOnly("org.projectlombok:lombok:1.18.32")
-    annotationProcessor("org.projectlombok:lombok:1.18.32")
+    compileOnly("org.projectlombok:lombok:1.18.44")
+    annotationProcessor("org.projectlombok:lombok:1.18.44")
 
-    testCompileOnly("org.projectlombok:lombok:1.18.32")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.32")
+    testCompileOnly("org.projectlombok:lombok:1.18.44")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.44")
 
     compileOnly("org.slf4j:slf4j-api:1.7.+")
     implementation("org.slf4j:slf4j-log4j12:1.7.29")
