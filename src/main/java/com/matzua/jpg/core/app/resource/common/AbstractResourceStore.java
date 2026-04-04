@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 @RequiredArgsConstructor
 public abstract class AbstractResourceStore<Resource> implements IAppStore<Resource>, ITrustedClient {
@@ -60,6 +61,7 @@ public abstract class AbstractResourceStore<Resource> implements IAppStore<Resou
     @Override public Resource remove(String id) {
         return resourcesById.remove(id);
     }
+//    @Override public void forEach(Consumer<Resource> consumer) {resourcesById.values().forEach(consumer);}
     // ↓ Misc. ↓ \.....................................................................................................:
     public abstract void root(String id, AbstractApp app);
     public <Recipe, Ingredients> ResourceFactory<Resource> getTrustedFactory(

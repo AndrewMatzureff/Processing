@@ -49,6 +49,9 @@ public record Type<T>(Class<T> clazz, Relation relation) {
     public boolean matches(Class<?> clazz) {
         return relation().matcher.test(clazz, clazz());
     }
+    public <Instance> boolean matches(Instance instance) {
+        return relation().matcher.test(instance.getClass(), clazz());
+    }
 
     /** Use this utility to instantiate a new {@link Type} which matches based on the following criteria:
      * "{@code any class instance equal to the given class}".

@@ -20,6 +20,7 @@ import com.matzua.jpg.core.app.draw.IRenderer;
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsCanvasStore;
 import com.matzua.jpg.core.app.resource.common.AbstractResourceStore;
 import com.matzua.jpg.user.simple.SimpleEventManager;
+import com.matzua.jpg.user.simple.SimpleGameState;
 import com.matzua.jpg.user.state.Type;
 import dagger.Binds;
 import dagger.Module;
@@ -27,6 +28,7 @@ import dagger.Provides;
 
 import javax.inject.Singleton;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -44,13 +46,13 @@ public interface CoreModule {
     @Singleton
     // TODO: make provider return interface IAppStore<ICanvas> and then inject ResourceFactory obtained from
     //  PGraphicsCanvasStore::getResourceFactory separately
-    static AbstractResourceStore<ICanvas> canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>());}
+    static PGraphicsCanvasStore canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>(), new HashSet<>(), new HashSet<>());}
     @Provides
     @Singleton
-    static IGameState gameState() {return () -> {};}
-    @Provides
-    @Singleton
-    static IRenderer renderer() {return () -> {};}
+    static IGameState gameState(PGraphicsCanvasStore canvasStore) {return new SimpleGameState("masterKey", new HashMap<>(), canvasStore);}
+//    @Provides
+//    @Singleton
+//    static IRenderer renderer() {return () -> {};}
 //    @Provides
 //    static AbstractApp
 //    @Provides
