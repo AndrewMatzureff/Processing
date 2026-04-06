@@ -11,7 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import processing.core.PGraphics;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,6 +25,7 @@ public class PGraphicsCanvasStoreTest extends TestBase {
     private PGraphicsCanvasStore testPGraphicsCanvasStore;
     // ↓ Associations ↓ \..............................................................................................:
     private Map<String, ICanvas> testCanvasesById;
+    private Set<String> testRoots;
     // ↓ Dependencies ↓ \..............................................................................................:
     private String testId;
     @Mock
@@ -32,7 +35,8 @@ public class PGraphicsCanvasStoreTest extends TestBase {
     public void setup() {
         super.setup();
         testCanvasesById = new HashMap<>();
-        testPGraphicsCanvasStore = new PGraphicsCanvasStore("testMasterKey", testCanvasesById);
+        testRoots = new HashSet<>();
+        testPGraphicsCanvasStore = new PGraphicsCanvasStore("testMasterKey", testCanvasesById, testRoots);
         testId = "testId";
     }
     // ↓ create ↓ \....................................................................................................:
@@ -40,15 +44,17 @@ public class PGraphicsCanvasStoreTest extends TestBase {
     void when_create__given_valid_new_entry_with_real_inputs__then_create_new_resource_entry() {
         // given
         final PGraphics mockPGraphics = mock();
-        final int testWidth = 320, testHeight = 200;
+        final int testWidthAndHeight = 100;
         final var resourceFactory = testPGraphicsCanvasStore
-            .getTrustedFactory(PGraphicsRecipe.from(mockApp), PGraphicsIngredients.from(testWidth, testHeight));
-        when(mockApp.createGraphics(testWidth, testHeight)).thenReturn(mockPGraphics);
+            .getTrustedFactory(PGraphicsRecipe.from(mockApp), PGraphicsIngredients.from(testWidthAndHeight));
+        when(mockApp.createGraphics(testWidthAndHeight, testWidthAndHeight)).thenReturn(mockPGraphics);
         // when
         testPGraphicsCanvasStore.create(testId, resourceFactory);
         // then
-        assertNotNull(testPGraphicsCanvasStore.get(testId));
-        assertEquals(mockPGraphics, testPGraphicsCanvasStore.get(testId).pGraphics());
+        try (var resource = testPGraphicsCanvasStore.get(testId)) {
+            assertNotNull(resource);
+            assertEquals(mockPGraphics, resource.pGraphics());
+        }
     }
     // ↓ getTrustedFactory ↓ \.........................................................................................:
     @Test
@@ -81,25 +87,15 @@ public class PGraphicsCanvasStoreTest extends TestBase {
         final PGraphics mockPGraphics = mock();
         when(mockApp.getGraphics()).thenReturn(mockPGraphics);
         // when
-        testPGraphicsCanvasStore.root(testId, mockApp);
+        testPGraphicsCanvasStore.root(testId, PGraphicsCanvasStore.ROOT_CANVAS_RECIPE, mockApp);
         // then
         assertNotNull(testPGraphicsCanvasStore.get(testId));
-        assertNotNull(testPGraphicsCanvasStore.get(testInternalRootId));
         assertEquals(mockPGraphics, testPGraphicsCanvasStore.get(testId).pGraphics());
-        assertEquals(mockPGraphics, testPGraphicsCanvasStore.get(testInternalRootId).pGraphics());
-    }
-    // ↓ root ↓ \......................................................................................................:
-    @Test
-    void when_root__given_existing_entry__then_fail() {
-        // given
-        testPGraphicsCanvasStore.root(testId, mockApp);
-        // when & then
-        assertThrows(RuntimeException.class, () -> testPGraphicsCanvasStore.root("Different: " + testId, mockApp));
     }
     // ↓ Misc. ↓ \.....................................................................................................:
     @Test
     void when_new__given_null_master_key__then_fail() {
         // given, when & then
-        assertThrows(NullPointerException.class, () -> new PGraphicsCanvasStore(null, testCanvasesById));
+        assertThrows(NullPointerException.class, () -> new PGraphicsCanvasStore(null, testCanvasesById, testRoots));
     }
 }

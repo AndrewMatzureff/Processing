@@ -49,8 +49,13 @@ public record Type<T>(Class<T> clazz, Relation relation) {
     public boolean matches(Class<?> clazz) {
         return relation().matcher.test(clazz, clazz());
     }
-    public <Instance> boolean matches(Instance instance) {
-        return relation().matcher.test(instance.getClass(), clazz());
+
+    /** This method is used to determine whether the given {@link Object} is a match to this {@link Type}.
+     * @param instance the given {@link Object} instance whose runtime {@link Class} to test
+     * @return whether the given instance's runtime {@link Class} falls under the purview of this {@link Type}
+     */
+    public boolean matches(Object instance) {
+        return matches(instance.getClass());
     }
 
     /** Use this utility to instantiate a new {@link Type} which matches based on the following criteria:

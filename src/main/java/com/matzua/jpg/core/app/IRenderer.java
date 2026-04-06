@@ -1,4 +1,4 @@
-package com.matzua.jpg.core.app.draw;
+package com.matzua.jpg.core.app;
 
 import com.matzua.jpg.user.Component;
 

@@ -13,12 +13,9 @@ package com.matzua.sample.jpg.simple.dagger.module;
 //import com.matzua.engine.util.Fun;
 //import com.matzua.engine.util.SequenceMap;
 
-import com.matzua.jpg.core.app.ICanvas;
 import com.matzua.jpg.core.app.IEventManager;
 import com.matzua.jpg.core.app.IGameState;
-import com.matzua.jpg.core.app.draw.IRenderer;
 import com.matzua.jpg.core.app.resource.canvas.PGraphicsCanvasStore;
-import com.matzua.jpg.core.app.resource.common.AbstractResourceStore;
 import com.matzua.jpg.user.simple.SimpleEventManager;
 import com.matzua.jpg.user.simple.SimpleGameState;
 import com.matzua.jpg.user.state.Type;
@@ -46,10 +43,23 @@ public interface CoreModule {
     @Singleton
     // TODO: make provider return interface IAppStore<ICanvas> and then inject ResourceFactory obtained from
     //  PGraphicsCanvasStore::getResourceFactory separately
-    static PGraphicsCanvasStore canvasStore() {return new PGraphicsCanvasStore("masterKey", new HashMap<>(), new HashSet<>(), new HashSet<>());}
+    static PGraphicsCanvasStore canvasStore() {
+        return new PGraphicsCanvasStore(
+            "masterKey",
+            new HashMap<>(),
+            new HashSet<>()
+        );
+    }
     @Provides
     @Singleton
-    static IGameState gameState(PGraphicsCanvasStore canvasStore) {return new SimpleGameState("masterKey", new HashMap<>(), canvasStore);}
+    static IGameState gameState(PGraphicsCanvasStore canvasStore) {
+        return new SimpleGameState(
+            "masterKey",
+            new HashMap<>(),
+            new HashSet<>(),
+            canvasStore
+        );
+    }
 //    @Provides
 //    @Singleton
 //    static IRenderer renderer() {return () -> {};}

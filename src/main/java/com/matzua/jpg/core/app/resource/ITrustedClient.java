@@ -1,4 +1,4 @@
-package com.matzua.jpg.core.app.resource.common;
+package com.matzua.jpg.core.app.resource;
 
 public interface ITrustedClient extends ITrustedParticipant{
     String FIX_CLIENT_MISSING_RECEIPT = "Ensure that your %s#auth(%s) implementation has properly set the "

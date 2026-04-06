@@ -1,16 +1,18 @@
-package com.matzua.jpg.core.app.resource.common;
+package com.matzua.jpg.core.app.resource;
 
-import com.matzua.jpg.core.sys.AbstractApp;
+import com.matzua.jpg.core.app.IAppStore;
+import com.matzua.jpg.core.app.IControlledAccessResource;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 @RequiredArgsConstructor
-public abstract class AbstractResourceStore<Resource> implements IAppStore<Resource>, ITrustedClient {
+public abstract class AbstractResourceStore<Resource extends IControlledAccessResource> implements IAppStore<Resource>, ITrustedClient {
     static final String FORMAT_ERR_FIX = "%s %s";
     static final String ERR_UNAUTHORIZED_RESOURCE_ACCESS = "Unauthorized resource access!";
     static final String FIX_TRUSTED_FACTORY = "Are you sure you're using your resource store-provided " +
@@ -26,6 +28,28 @@ public abstract class AbstractResourceStore<Resource> implements IAppStore<Resou
     protected final Map<String, Resource> resourcesById;
     private String receipt = null;
     private boolean transactionInProgress = false;
+    private final Set<String> roots;
+
+    public <Recipe extends Function<Ingredients, Resource>, Ingredients> void root(
+        String id,
+        Recipe recipe,
+        Ingredients ingredients
+    ) {
+        if (roots.add(id)) {
+            create(id, getTrustedFactory(
+                recipe,
+                ingredients,
+                (r, i) -> new AbstractTrustedResourceFactory<Recipe, Ingredients>(r, i) {
+                    @Override
+                    public Resource create() {
+                        completeTransaction();
+                        return recipe.apply(ingredients);
+                    }
+                }
+            ));
+        } else throw new RuntimeException("Tried to reassign an existing root resource (\"%s\")!".formatted(id)
+            + "\n%s".formatted(roots));
+    }
     // ↓ ITrustedParticipant ↓ \.......................................................................................:
     // ↓ ITrustedClient ↓ \............................................................................................:
     @Override
@@ -56,14 +80,15 @@ public abstract class AbstractResourceStore<Resource> implements IAppStore<Resou
         resourcesById.put(id, resource);
     }
     @Override public Resource get(String id) {
+        if (!roots.contains(id)) resourcesById.get(id).open();
         return resourcesById.get(id);
     }
-    @Override public Resource remove(String id) {
-        return resourcesById.remove(id);
+    @Override public void remove(String id) {
+        try (var resource = resourcesById.remove(id)) {resource.open();} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-//    @Override public void forEach(Consumer<Resource> consumer) {resourcesById.values().forEach(consumer);}
     // ↓ Misc. ↓ \.....................................................................................................:
-    public abstract void root(String id, AbstractApp app);
     public <Recipe, Ingredients> ResourceFactory<Resource> getTrustedFactory(
         Recipe recipe,
         Ingredients ingredients,
