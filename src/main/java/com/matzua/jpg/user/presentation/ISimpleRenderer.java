@@ -6,7 +6,7 @@ import com.matzua.jpg.user.state.Entity;
 import processing.core.PGraphics;
 
 public interface ISimpleRenderer extends IRenderer {
-    record X(Entity entity) implements ISimpleRenderer {
+    record X(Entity entity, String channel) implements ISimpleRenderer {
         public void onRender(ICanvas canvas) {
             final PGraphics g = canvas.pGraphics();
             g.push();
@@ -16,7 +16,7 @@ public interface ISimpleRenderer extends IRenderer {
             g.pop();
         }
     }
-    record Background() implements ISimpleRenderer {
+    record Background(String channel) implements ISimpleRenderer {
         public void onRender(ICanvas canvas) {
             final PGraphics g = canvas.pGraphics();
             g.background((int) System.currentTimeMillis() / 10 | 0xff000000);

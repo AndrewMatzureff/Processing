@@ -6,6 +6,7 @@ import com.matzua.jpg.core.app.resource.canvas.PGraphicsRecipe;
 import com.matzua.jpg.core.sys.AbstractApp;
 import com.matzua.jpg.core.app.IEventManager;
 import com.matzua.jpg.core.app.IGameState;
+import com.matzua.jpg.user.presentation.FloatingDisplay;
 import com.matzua.jpg.user.presentation.ISimpleRenderer;
 import com.matzua.jpg.user.presentation.FullscreenDisplay;
 import com.matzua.jpg.user.state.Entity;
@@ -49,17 +50,28 @@ public class SimpleApp extends AbstractApp implements
             PGraphicsRecipe.from(this),
             PGraphicsIngredients.from(320, 200)
         ));
+        canvasStore.create("aux", canvasStore.getTrustedFactory(
+            PGraphicsRecipe.from(this),
+            PGraphicsIngredients.from(50, 50)
+        ));
         // TODO: eliminate cast
         final SimpleGameState sgs = (SimpleGameState) getGameState();
         sgs.create("player",
             sgs.getTrustedFactory(UnaryOperator.identity(), new Entity(canvasStore, eventManager)));
         sgs.create("background",
             sgs.getTrustedFactory(UnaryOperator.identity(), new Entity(canvasStore, eventManager)));
+        sgs.create("aux",
+            sgs.getTrustedFactory(UnaryOperator.identity(), new Entity(canvasStore, eventManager)));
         sgs.get("player").x = 50;
         sgs.get("player").y = 50;
-        sgs.get("player").components.add(new FullscreenDisplay(canvasStore, "main", "root"));
-        sgs.get("player").components.add(new ISimpleRenderer.X(sgs.get("player")));
-        sgs.get("background").components.add(new ISimpleRenderer.Background());
+        sgs.get("player").components.add(new FullscreenDisplay("main", "root")); // stage = 2
+        sgs.get("player").components.add(new ISimpleRenderer.X(sgs.get("player"), "main")); // stage = 0
+        sgs.get("background").components.add(new ISimpleRenderer.Background("main")); // stage = 0
+        sgs.get("aux").x = 25;
+        sgs.get("aux").y = 25;
+        sgs.get("aux").components.add(new FloatingDisplay("aux", "main")); // stage = 1
+        sgs.get("aux").components.add(new ISimpleRenderer.X(sgs.get("aux"), "aux")); // stage = 0
+        sgs.get("background").components.add(new ISimpleRenderer.Background("aux")); // stage = 0
     }
     // ↓ Misc. ↓ \.....................................................................................................:
 }

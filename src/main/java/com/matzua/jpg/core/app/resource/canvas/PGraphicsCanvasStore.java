@@ -35,7 +35,7 @@ public class PGraphicsCanvasStore extends AbstractResourceStore<ICanvas> {
         public ICanvas create() {
             completeTransaction();
             final PGraphics pGraphics = recipe.get().apply(ingredients.width(), ingredients.height());
-            return new RootCanvas(pGraphics);
+            return () -> pGraphics;
         }
     }
 }
